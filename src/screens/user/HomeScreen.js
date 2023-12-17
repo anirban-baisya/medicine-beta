@@ -13,7 +13,8 @@ import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useState } from "react";
 import cartIcon from "../../../assets/icons/cart_beg.png";
 import scanIcon from "../../../assets/icons/scan_icons.png";
-import easybuylogo from "../../../assets/logo/logo.png";
+// import MedicineBeta from "../../../assets/logo/logo.png";
+import MedicineBeta from "../../../assets/logo/logo2.png";
 import { colors } from "../../constants";
 import CustomIconButton from "../../components/CustomIconButton/CustomIconButton";
 import ProductCard from "../../components/ProductCard/ProductCard";
@@ -23,6 +24,7 @@ import { bindActionCreators } from "redux";
 import * as actionCreaters from "../../states/actionCreaters/actionCreaters";
 import SearchableDropdown from "react-native-searchable-dropdown";
 import { SliderBox } from "react-native-image-slider-box";
+import QuickOrderCard from "../../components/QuickOrderCard";
 
 const category = [
   {
@@ -133,8 +135,8 @@ const HomeScreen = ({ navigation, route }) => {
           <Ionicons name="menu" size={30} color={colors.muted} />
         </TouchableOpacity>
         <View style={styles.topbarlogoContainer}>
-          <Image source={easybuylogo} style={styles.logo} />
-          <Text style={styles.toBarText}>EasyBuy</Text>
+          <Image source={MedicineBeta} style={styles.logo} />
+          <Text style={styles.toBarText}>MedicineBeta</Text>
         </View>
         <TouchableOpacity
           style={styles.cartIconContainer}
@@ -201,6 +203,24 @@ const HomeScreen = ({ navigation, route }) => {
           </View>
         </View>
         <ScrollView nestedScrollEnabled={true}>
+
+          <View style={styles.quickOrderContainer}>
+            <QuickOrderCard
+              imagePath={require('../../../assets/icons/order_with_presc.png')}
+              imageHeight={60}
+              title={'Quick order with prescription'}
+              description={'Just upload prescription \n and place order'}
+              onPressView={() => navigation.navigate("uploadPrescri", { userInfo: userInfo }) }
+              // onPressView={() => navigation.navigate("uploadPrescri") }
+            />
+            <QuickOrderCard
+              imagePath={require('../../../assets/icons/call_to_place_order.png')}
+              imageHeight={50}
+              title={'Call to place an order'}
+              description={'Call us to tell what you require'}
+              // onPressView={() => handleView(list?.productId)}
+            />
+          </View>
           <View style={styles.promotiomSliderContainer}>
             <SliderBox
               images={slides}
@@ -329,8 +349,8 @@ const styles = StyleSheet.create({
     justifyContent: "space-evenly",
   },
   logo: {
-    height: 30,
-    width: 30,
+    height: 35,
+    width: 35,
     resizeMode: "contain",
   },
   secondaryText: {
@@ -391,6 +411,11 @@ const styles = StyleSheet.create({
     height: 50,
     marginTop: 10,
     marginLeft: 10,
+  },
+  quickOrderContainer: {
+    margin: 5,
+    // height: 140,
+    backgroundColor: colors.light,
   },
   promotiomSliderContainer: {
     margin: 5,

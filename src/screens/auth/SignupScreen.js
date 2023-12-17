@@ -11,7 +11,8 @@ import {
 import React, { useState } from "react";
 import { colors, network } from "../../constants";
 import CustomInput from "../../components/CustomInput";
-import header_logo from "../../../assets/logo/logo.png";
+// import header_logo from "../../../assets/logo/logo.png";
+import header_logo from "../../../assets/logo/logo2.png";
 import CustomButton from "../../components/CustomButton";
 import { Ionicons } from "@expo/vector-icons";
 import CustomAlert from "../../components/CustomAlert/CustomAlert";
@@ -105,7 +106,7 @@ const SignupScreen = ({ navigation }) => {
             </View>
             <View>
               <Text style={styles.screenNameParagraph}>
-                Create your account on EasyBuy to get an access to millions of
+                Create your account on MedicineBeta to get an access to millions of
                 products
               </Text>
             </View>

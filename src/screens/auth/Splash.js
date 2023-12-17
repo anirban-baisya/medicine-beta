@@ -60,7 +60,7 @@ const styles = StyleSheet.create({
   },
   logo: {
     resizeMode: "contain",
-    width: 80,
-    height: 80,
+    width: 90,
+    height: 90,
   },
 });
