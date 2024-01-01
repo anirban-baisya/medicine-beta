@@ -8,6 +8,7 @@ import {
   FlatList,
   RefreshControl,
   ScrollView,
+  Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useState } from "react";
@@ -25,6 +26,7 @@ import * as actionCreaters from "../../states/actionCreaters/actionCreaters";
 import SearchableDropdown from "react-native-searchable-dropdown";
 import { SliderBox } from "react-native-image-slider-box";
 import QuickOrderCard from "../../components/QuickOrderCard";
+import * as Linking from "expo-linking";
 
 const category = [
   {
@@ -127,6 +129,19 @@ const HomeScreen = ({ navigation, route }) => {
     fetchProduct();
   }, []);
 
+  const onCallMobilePhone = (phoneNumber) => {
+
+    if (Platform.OS === 'android') {
+      Linking.openURL(`tel:${phoneNumber}`);
+      return;
+    }
+
+    if (Platform.OS === 'ios') {
+      Linking.openURL(`telprompt:${phoneNumber}`)
+      return;
+    }
+  }
+
   return (
     <View style={styles.container}>
       <StatusBar></StatusBar>
@@ -142,7 +157,7 @@ const HomeScreen = ({ navigation, route }) => {
           style={styles.cartIconContainer}
           onPress={() => navigation.navigate("cart")}
         >
-          {cartproduct.length > 0 ? (
+          {cartproduct?.length > 0 ? (
             <View style={styles.cartItemCountContainer}>
               <Text style={styles.cartItemCountText}>{cartproduct.length}</Text>
             </View>
@@ -210,15 +225,14 @@ const HomeScreen = ({ navigation, route }) => {
               imageHeight={60}
               title={'Quick order with prescription'}
               description={'Just upload prescription \n and place order'}
-              onPressView={() => navigation.navigate("uploadPrescri", { userInfo: userInfo }) }
-              // onPressView={() => navigation.navigate("uploadPrescri") }
+              onPressView={() => navigation.navigate("uploadPrescri", { userInfo: userInfo })}
             />
             <QuickOrderCard
               imagePath={require('../../../assets/icons/call_to_place_order.png')}
               imageHeight={50}
               title={'Call to place an order'}
               description={'Call us to tell what you require'}
-              // onPressView={() => handleView(list?.productId)}
+              onPressView={() => onCallMobilePhone('7908492494')}
             />
           </View>
           <View style={styles.promotiomSliderContainer}>
@@ -259,7 +273,7 @@ const HomeScreen = ({ navigation, route }) => {
           <View style={styles.primaryTextContainer}>
             <Text style={styles.primaryText}>New Arrivals</Text>
           </View>
-          {products.length === 0 ? (
+          {products?.length === 0 ? (
             <View style={styles.productCardContainerEmpty}>
               <Text style={styles.productCardContainerEmptyText}>
                 No Product

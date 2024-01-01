@@ -14,6 +14,8 @@
     "@react-navigation/bottom-tabs": "^6.3.2",
     "@react-navigation/native": "^6.0.11",
     "@react-navigation/native-stack": "^6.7.0",
+    "@reduxjs/toolkit": "^2.0.1",
+    "axios": "^1.6.3",
     "date-fns": "^2.29.1",
     "expo": "~49.0.15",
     "expo-file-system": "~15.4.5",
@@ -40,9 +42,9 @@
     "react-native-step-indicator": "^1.0.3",
     "react-native-vector-icons": "^9.2.0",
     "react-native-web": "~0.19.6",
-    "react-redux": "^8.0.2",
-    "redux": "^4.2.0",
-    "redux-thunk": "^2.4.1"
+    "react-redux": "^8.1.3",
+    "redux-saga": "^1.2.3",
+    "expo-linking": "~5.0.2"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0"

@@ -78,7 +78,8 @@ const UserProfileScreen = ({ navigation, route }) => {
           Icon={Ionicons}
           iconName={"log-out"}
           onPress={async () => {
-            await AsyncStorage.removeItem("authUser");
+            // await AsyncStorage.removeItem("authUser");
+            await AsyncStorage.clear();
             navigation.replace("login");
           }}
         />

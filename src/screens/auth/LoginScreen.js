@@ -8,7 +8,7 @@ import {
   ScrollView,
 } from "react-native";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { colors, network } from "../../constants";
 import CustomInput from "../../components/CustomInput";
 // import header_logo from "../../../assets/logo/logo.png";
@@ -18,37 +18,29 @@ import CustomAlert from "../../components/CustomAlert/CustomAlert";
 import ProgressDialog from "react-native-progress-dialog";
 import InternetConnectionAlert from "react-native-internet-connection-alert";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useDispatch, useSelector } from "react-redux";
+import { onUserLoginSubmit } from "../../redux/slicers/loginSlicer";
 
 const LoginScreen = ({ navigation }) => {
+  const dispatch = useDispatch();
+  const loginUserInfo = useSelector((state) => state.loginReducer.data);
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isloading, setIsloading] = useState(false);
 
   //method to store the authUser to aync storage
-  _storeData = async (user) => {
+  _storeData = async (dataType, user) => {
     try {
-      AsyncStorage.setItem("authUser", JSON.stringify(user));
+      dataType == 'userDetails' ? AsyncStorage.setItem("authUser", JSON.stringify(user))
+        : AsyncStorage.setItem("userToken", JSON.stringify(user));
     } catch (error) {
       console.log(error);
       setError(error);
     }
   };
 
-  var myHeaders = new Headers();
-  myHeaders.append("Content-Type", "application/json");
-
-  var raw = JSON.stringify({
-    email: email,
-    password: password,
-  });
-
-  var requestOptions = {
-    method: "POST",
-    headers: myHeaders,
-    body: raw,
-    redirect: "follow",
-  };
 
   //method to validate the user credentials and navigate to Home Screen / Dashboard
   const loginHandle = () => {
@@ -56,7 +48,6 @@ const LoginScreen = ({ navigation }) => {
     //[check validation] -- Start
     // if email does not contain @ sign
     if (email == "") {
-      console.log(email,'-->>');
       setIsloading(false);
       return setError("Please enter your email");
     }
@@ -80,41 +71,44 @@ const LoginScreen = ({ navigation }) => {
     }
     //[check validation] -- End
 
-    fetch(network.serverip + "/login", requestOptions) // API call
-      .then((response) => response.json())
-      .then((result) => {
-        if (
-          result.status == 200 ||
-          (result.status == 1 && result.success != false)
-        ) {
-          if (result?.data?.userType == "ADMIN") {
-            //check the user type if the type is ADMIN then navigate to Dashboard else navigate to User Home
-            _storeData(result.data);
-            setIsloading(false);
-            navigation.replace("dashboard", { authUser: result.data }); // naviagte to Admin Dashboard
-          } else {
-            _storeData(result.data);
-            setIsloading(false);
-            navigation.replace("tab", { user: result.data }); // naviagte to User Dashboard
-          }
-        } else {
-          setIsloading(false);
-          return setError(result.message);
-        }
+    dispatch(
+      onUserLoginSubmit({
+        email: email,
+        password: password,
+        loginType: "email",
       })
-      .catch((error) => {
-        setIsloading(false);
-        console.log("error", setError(error.message));
-      });
+    );
   };
 
-  const loginHandleTest = () => {
-    navigation.replace("tab", { user: '' }); // naviagte to User Dashboard
 
-  }
+  useEffect(() => {
+
+    if (
+      loginUserInfo?.status == 200 ||
+      (loginUserInfo?.token && loginUserInfo.success != false)
+    ) {
+      if (loginUserInfo?.userDetails?.userType == "ADMIN") {
+        //check the user type if the type is ADMIN then navigate to Dashboard else navigate to User Home
+        _storeData('userDetails', loginUserInfo.userDetails);
+        _storeData('token', loginUserInfo.token);
+        setIsloading(false);
+        navigation.replace("dashboard", { authUser: loginUserInfo.userDetails }); // naviagte to Admin Dashboard
+      } else {
+        _storeData('userDetails', loginUserInfo.userDetails);
+        _storeData('token', loginUserInfo.token);
+        setIsloading(false);
+        navigation.replace("tab", { user: loginUserInfo.userDetails }); // naviagte to User Dashboard
+      }
+    } else if (loginUserInfo != null) {
+      setIsloading(false);
+      return setError(loginUserInfo?.message);
+    }
+
+  }, [loginUserInfo]);
+
 
   return (
-    <InternetConnectionAlert onChange={(connectionState) => {}}>
+    <InternetConnectionAlert onChange={(connectionState) => { }}>
       <KeyboardAvoidingView
         // behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.container}
@@ -164,8 +158,7 @@ const LoginScreen = ({ navigation }) => {
           </View>
         </ScrollView>
         <View style={styles.buttomContainer}>
-          {/* <CustomButton text={"Login"} onPress={loginHandle} /> */}
-          <CustomButton text={"Login"} onPress={loginHandleTest} />
+          <CustomButton text={"Login"} onPress={loginHandle} />
         </View>
         <View style={styles.bottomContainer}>
           <Text>Don't have an account?</Text>

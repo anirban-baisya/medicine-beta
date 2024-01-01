@@ -8,56 +8,52 @@ import {
   ScrollView,
   TouchableOpacity,
 } from "react-native";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { colors, network } from "../../constants";
 import CustomInput from "../../components/CustomInput";
-// import header_logo from "../../../assets/logo/logo.png";
 import header_logo from "../../../assets/logo/logo2.png";
 import CustomButton from "../../components/CustomButton";
 import { Ionicons } from "@expo/vector-icons";
 import CustomAlert from "../../components/CustomAlert/CustomAlert";
 import InternetConnectionAlert from "react-native-internet-connection-alert";
+import { useDispatch, useSelector } from "react-redux";
+import { onUserRegisterSubmit } from "../../redux/slicers/registerSlicer";
 
 const SignupScreen = ({ navigation }) => {
+  const dispatch = useDispatch();
+  const registerUserInfo = useSelector(state => state.registerReducer.data);
+
   const [email, setEmail] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [name, setName] = useState("");
   const [error, setError] = useState("");
 
-  var myHeaders = new Headers();
-  myHeaders.append("Content-Type", "application/json");
-
-  var raw = JSON.stringify({
-    email: email,
-    password: password,
-    name: name,
-    userType: "USER",
-  });
-
-  var requestOptions = {
-    method: "POST",
-    headers: myHeaders,
-    body: raw,
-    redirect: "follow",
-  };
+  
 
   //method to post the user data to server for user signup using API call
   const signUpHandle = () => {
-    if (email == "") {
-      return setError("Please enter your email");
-    }
+    const indianNoRegex = /^[6-9]{1}[0-9]{9}$/;
+    const emailRegex = /^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/g;
+
     if (name == "") {
       return setError("Please enter your name");
     }
+    if (email == "") {
+      return setError("Please enter your email");
+    }
+    if (emailRegex.test(email) != true) {
+      return setError("Please enter valid email");
+    }
+    if (phoneNumber == "") {
+      return setError("Please enter your Phone Number");
+    }
+    if (indianNoRegex.test(phoneNumber) != true) {
+      return setError("Please enter valid Mobile no");
+    }
     if (password == "") {
       return setError("Please enter your password");
-    }
-    if (!email.includes("@")) {
-      return setError("Email is not valid");
-    }
-    if (email.length < 6) {
-      return setError("Email is too short");
     }
     if (password.length < 5) {
       return setError("Password must be 6 characters long");
@@ -65,16 +61,29 @@ const SignupScreen = ({ navigation }) => {
     if (password != confirmPassword) {
       return setError("password does not match");
     }
-    fetch(network.serverip + "/register", requestOptions) // API call
-      .then((response) => response.json(console.log(response,'====>>>')))
-      .then((result) => {
-        console.log(result);
-        if (result.data["email"] == email) {
-          navigation.navigate("login");
-        }
-      })
-      .catch((error) => console.log("error---->>", setError(error.message)));
-  };
+
+    dispatch(onUserRegisterSubmit({
+      "name": name,
+      "userType": "CUSTOMER",
+      "email": email,
+      "password": password,
+      "phoneNumber": phoneNumber
+    }))
+
+  }
+
+
+
+  useEffect(() => {
+    console.log(registerUserInfo, 'registerUserInfo--->');
+    if (registerUserInfo?.success) {
+      navigation.navigate("login");
+    } else if (registerUserInfo != null && registerUserInfo?.success == false) {
+      return setError(registerUserInfo?.message);
+    }
+
+  }, [registerUserInfo]);
+
   return (
     <InternetConnectionAlert
       onChange={(connectionState) => {
@@ -126,6 +135,15 @@ const SignupScreen = ({ navigation }) => {
               placeholder={"Email"}
               placeholderTextColor={colors.muted}
               radius={5}
+              keyboardType={'email-address'}
+            />
+            <CustomInput
+              value={phoneNumber}
+              setValue={setPhoneNumber}
+              placeholder={"Phone Number"}
+              placeholderTextColor={colors.muted}
+              radius={5}
+              keyboardType={'number-pad'}
             />
             <CustomInput
               value={password}
