@@ -26,6 +26,7 @@ import * as actionCreaters from "../../states/actionCreaters/actionCreaters";
 import SearchableDropdown from "react-native-searchable-dropdown";
 import { SliderBox } from "react-native-image-slider-box";
 import QuickOrderCard from "../../components/QuickOrderCard";
+import { homeApi } from "../../services/Home/HomeApi";
 import * as Linking from "expo-linking";
 
 const category = [
@@ -51,11 +52,6 @@ const category = [
   },
 ];
 
-const slides = [
-  require("../../../assets/image/banners/banner.png"),
-  require("../../../assets/image/banners/banner.png"),
-];
-
 const HomeScreen = ({ navigation, route }) => {
   const cartproduct = useSelector((state) => state.product);
   const dispatch = useDispatch();
@@ -68,6 +64,7 @@ const HomeScreen = ({ navigation, route }) => {
   const [error, setError] = useState("");
   const [userInfo, setUserInfo] = useState({});
   const [searchItems, setSearchItems] = useState([]);
+  const [slides, setSlides] = useState([]);
 
   //method to convert the authUser to json object
   const convertToJSON = (obj) => {
@@ -88,17 +85,26 @@ const HomeScreen = ({ navigation, route }) => {
     addCartItem(product);
   };
 
+  const imageUris = slides.map(imageObj => ({ uri: `data:image/png;base64,${imageObj.sliderImage}` }));
+
+
   var headerOptions = {
     method: "GET",
     redirect: "follow",
   };
 
   const fetchProduct = () => {
+
     fetch(`${network.serverip}/products`, headerOptions) //API call
+
       .then((response) => response.json())
+
       .then((result) => {
+
         if (result.success) {
+
           setProducts(result.data);
+
           setError("");
           let payload = [];
           result.data.forEach((cat, index) => {
@@ -123,11 +129,21 @@ const HomeScreen = ({ navigation, route }) => {
     setRefreshing(false);
   };
 
+
+
   //convert user to json and fetch products in initial render
   useEffect(() => {
     convertToJSON(user);
     fetchProduct();
   }, []);
+
+  useEffect(() => {
+    homeApi().then((result) => {
+      setSlides(result)
+    })
+  },[])
+
+
 
   const onCallMobilePhone = (phoneNumber) => {
 
@@ -237,12 +253,13 @@ const HomeScreen = ({ navigation, route }) => {
           </View>
           <View style={styles.promotiomSliderContainer}>
             <SliderBox
-              images={slides}
+              images={imageUris}
               sliderBoxHeight={140}
               dotColor={colors.primary}
               inactiveDotColor={colors.muted}
               paginationBoxVerticalPadding={10}
-              autoplayInterval={6000}
+              autoplayInterval={2000}
+              
             />
           </View>
           <View style={styles.primaryTextContainer}>
