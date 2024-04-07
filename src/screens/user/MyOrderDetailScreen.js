@@ -89,17 +89,19 @@ const MyOrderDetailScreen = ({ navigation, route }) => {
     }
     setValue(orderDetail?.status);
     setAddress(
-      orderDetail?.country +
+      orderDetail?.shippingAddress +
         ", " +
-        orderDetail?.city +
+      orderDetail?.city +
         ", " +
-        orderDetail?.shippingAddress
+        orderDetail?.landMark 
     );
+   
     setTotalCost(
-      orderDetail?.items.reduce((accumulator, object) => {
-        return (accumulator + object.price) * object.quantity;
-      }, 0)
+      (Math.round( orderDetail?.items.reduce((accumulator, object) => {
+        return accumulator + object.price * object.qty;
+      }, 0)* 100) / 100).toFixed(2)
     );
+
     if (orderDetail?.status === "pending") {
       setTrackingState(1);
     } else if (orderDetail?.status === "shipped") {
@@ -155,7 +157,7 @@ const MyOrderDetailScreen = ({ navigation, route }) => {
         </View>
         <View style={styles.orderInfoContainer}>
           <Text style={styles.secondarytextMedian}>
-            Order # {orderDetail?.orderId}
+            Order # {orderDetail?.id}
           </Text>
           <Text style={styles.secondarytextSm}>
             Ordered on {dateFormat(orderDetail?.updatedAt)}
@@ -192,7 +194,7 @@ const MyOrderDetailScreen = ({ navigation, route }) => {
           </View>
           <View style={styles.orderItemContainer}>
             <Text style={styles.orderItemText}>
-              Order on : {orderDetail?.updatedAt}
+              Order on : {dateFormat(orderDetail?.updatedAt)}
             </Text>
           </View>
           <ScrollView
@@ -202,16 +204,16 @@ const MyOrderDetailScreen = ({ navigation, route }) => {
             {orderDetail?.items.map((product, index) => (
               <View key={index}>
                 <BasicProductList
-                  title={product?.productId?.title}
+                  title={product?.item?.itemName}
                   price={product?.price}
-                  quantity={product?.quantity}
+                  quantity={product?.qty}
                 />
               </View>
             ))}
           </ScrollView>
           <View style={styles.orderItemContainer}>
             <Text style={styles.orderItemText}>Total</Text>
-            <Text>{totalCost}$</Text>
+            <Text>₹ {totalCost}</Text>
           </View>
         </View>
         <View style={styles.emptyView}></View>

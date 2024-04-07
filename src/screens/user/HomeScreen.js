@@ -14,7 +14,7 @@ import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useState } from "react";
 import cartIcon from "../../../assets/icons/cart_beg.png";
 import scanIcon from "../../../assets/icons/scan_icons.png";
-// import MedicineBeta from "../../../assets/logo/logo.png";
+import searchBarImg from "../../../assets/icons/3d-search-bar.png";
 import MedicineBeta from "../../../assets/logo/logo2.png";
 import { colors } from "../../constants";
 import CustomIconButton from "../../components/CustomIconButton/CustomIconButton";
@@ -58,7 +58,7 @@ const HomeScreen = ({ navigation, route }) => {
 
   const { addCartItem } = bindActionCreators(actionCreaters, dispatch);
 
-  const { user } = route.params;
+  const { user, categoryList } = route.params;
   const [products, setProducts] = useState([]);
   const [refeshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
@@ -141,7 +141,7 @@ const HomeScreen = ({ navigation, route }) => {
     homeApi().then((result) => {
       setSlides(result)
     })
-  },[])
+  }, [])
 
 
 
@@ -185,7 +185,7 @@ const HomeScreen = ({ navigation, route }) => {
       </View>
       <View style={styles.bodyContainer}>
         <View style={styles.searchContainer}>
-          <View style={styles.inputContainer}>
+          {/* <View style={styles.inputContainer}>
             <SearchableDropdown
               onTextChange={(text) => console.log(text)}
               onItemSelect={(item) => handleProductPress(item)}
@@ -224,14 +224,19 @@ const HomeScreen = ({ navigation, route }) => {
               resetValue={false}
               underlineColorAndroid="transparent"
             />
-            {/* <CustomInput radius={5} placeholder={"Search...."} /> */}
-          </View>
-          <View style={styles.buttonContainer}>
+          </View> */}
+          {/* <CustomInput radius={5} placeholder={"Search...."} /> */}
+          <TouchableOpacity style={{ alignItems: "center", flex: 1 }}
+            onPress={() => navigation.navigate("search", { userInfo: userInfo })}
+          >
+            <Image source={searchBarImg} style={{ width: '91%', height: 55, }} />
+          </TouchableOpacity>
+          {/* <View style={styles.buttonContainer}>
             <TouchableOpacity style={styles.scanButton}>
               <Text style={styles.scanButtonText}>Scan</Text>
               <Image source={scanIcon} style={{ width: 20, height: 20 }} />
             </TouchableOpacity>
-          </View>
+          </View> */}
         </View>
         <ScrollView nestedScrollEnabled={true}>
 
@@ -248,7 +253,7 @@ const HomeScreen = ({ navigation, route }) => {
               imageHeight={50}
               title={'Call to place an order'}
               description={'Call us to tell what you require'}
-              onPressView={() => onCallMobilePhone('7908492494')}
+              onPressView={() => onCallMobilePhone('9883848003')}
             />
           </View>
           <View style={styles.promotiomSliderContainer}>
@@ -259,7 +264,7 @@ const HomeScreen = ({ navigation, route }) => {
               inactiveDotColor={colors.muted}
               paginationBoxVerticalPadding={10}
               autoplayInterval={2000}
-              
+
             />
           </View>
           <View style={styles.primaryTextContainer}>
@@ -270,7 +275,7 @@ const HomeScreen = ({ navigation, route }) => {
               showsHorizontalScrollIndicator={false}
               style={styles.flatListContainer}
               horizontal={true}
-              data={category}
+              data={categoryList}
               keyExtractor={(item, index) => `${item}-${index}`}
               renderItem={({ item, index }) => (
                 <View style={{ marginBottom: 10 }} key={index}>
@@ -279,7 +284,7 @@ const HomeScreen = ({ navigation, route }) => {
                     text={item.title}
                     image={item.image}
                     onPress={() =>
-                      navigation.jumpTo("categories", { categoryID: item })
+                      navigation.jumpTo("categories", { categoryID: item, categoryList: categoryList })
                     }
                   />
                 </View>
@@ -389,8 +394,9 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   searchContainer: {
-    marginTop: 10,
-    padding: 10,
+    marginBottom: 4,
+    // marginTop: 10,
+    // padding: 10,
     width: "100%",
     display: "flex",
     flexDirection: "row",

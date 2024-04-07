@@ -3,10 +3,12 @@
 
 import loginReducer from "./slicers/loginSlicer"; //using this export default  grabbing  loginSlicer.reducer;
 import registerReducer from "./slicers/registerSlicer";
+import myCartReducer from "./slicers/myCartSlicer";
 
 const reducers = {
     loginReducer: loginReducer,
     registerReducer: registerReducer,
+    myCartReducer: myCartReducer,
    
 }
 

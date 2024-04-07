@@ -21,9 +21,10 @@ import * as actionCreaters from "../../states/actionCreaters/actionCreaters";
 import CustomIconButton from "../../components/CustomIconButton/CustomIconButton";
 import ProductCard from "../../components/ProductCard/ProductCard";
 import CustomInput from "../../components/CustomInput";
+import { getItemsByCIdApi } from "../../services/Categories&Items/getItemsByCIdApi";
 
 const CategoriesScreen = ({ navigation, route }) => {
-  const { categoryID } = route.params;
+  const { categoryID, categoryList } = route.params;
 
   const [isLoading, setLoading] = useState(true);
   const [products, setProducts] = useState([]);
@@ -62,55 +63,26 @@ const CategoriesScreen = ({ navigation, route }) => {
     setRefreshing(false);
   };
 
-  var headerOptions = {
-    method: "GET",
-    redirect: "follow",
-  };
-  const category = [
-    {
-      _id: "62fe244f58f7aa8230817f89",
-      title: "Garments",
-      image: require("../../../assets/icons/garments.png"),
-    },
-    {
-      _id: "62fe243858f7aa8230817f86",
-      title: "Electornics",
-      image: require("../../../assets/icons/electronics.png"),
-    },
-    {
-      _id: "62fe241958f7aa8230817f83",
-      title: "Cosmentics",
-      image: require("../../../assets/icons/cosmetics.png"),
-    },
-    {
-      _id: "62fe246858f7aa8230817f8c",
-      title: "Groceries",
-      image: require("../../../assets/icons/grocery.png"),
-    },
-  ];
-  const [selectedTab, setSelectedTab] = useState(category[0]);
+  const [selectedTab, setSelectedTab] = useState(categoryList[0]);
+
 
   //method to fetch the product from server using API call
   const fetchProduct = () => {
-    var headerOptions = {
-      method: "GET",
-      redirect: "follow",
-    };
-    fetch(`${network.serverip}/products`, headerOptions)
-      .then((response) => response.json())
-      .then((result) => {
-        if (result.success) {
-          setProducts(result.data);
-          setFoundItems(result.data);
-          setError("");
-        } else {
-          setError(result.message);
-        }
-      })
-      .catch((error) => {
-        setError(error.message);
-        console.log("error", error);
-      });
+
+    getItemsByCIdApi(selectedTab?.categoryId).then((result) => {
+
+      // if (result.success) {
+      let newArr = result.map(i => ({ ...i, purchaseQty: 0 }));
+      setProducts(newArr);
+      setFoundItems(newArr);
+      setError("");
+      // } else {
+      //   setError(result.message);
+      // }
+    }).catch((error) => {
+      setError(error.message);
+      console.log("error", error);
+    });
   };
 
   //listener call on tab focus and initlize categoryID
@@ -125,7 +97,7 @@ const CategoriesScreen = ({ navigation, route }) => {
     const keyword = filterItem;
     if (keyword !== "") {
       const results = products.filter((product) => {
-        return product?.title.toLowerCase().includes(keyword.toLowerCase());
+        return product?.itemName.toLowerCase().includes(keyword.toLowerCase());
       });
 
       setFoundItems(results);
@@ -182,10 +154,10 @@ const CategoriesScreen = ({ navigation, route }) => {
             placeholder={"Search..."}
             value={filterItem}
             setValue={setFilterItem}
-          />
+          />  
         </View>
         <FlatList
-          data={category}
+          data={categoryList}
           keyExtractor={(index, item) => `${index}-${item}`}
           horizontal
           style={{ flexGrow: 0 }}
@@ -204,9 +176,7 @@ const CategoriesScreen = ({ navigation, route }) => {
           )}
         />
 
-        {foundItems.filter(
-          (product) => product?.category?._id === selectedTab?._id
-        ).length === 0 ? (
+        {foundItems?.length === 0 ? (
           <View style={styles.noItemContainer}>
             <View
               style={{
@@ -230,9 +200,7 @@ const CategoriesScreen = ({ navigation, route }) => {
           </View>
         ) : (
           <FlatList
-            data={foundItems.filter(
-              (product) => product?.category?._id === selectedTab?._id
-            )}
+            data={foundItems}
             refreshControl={
               <RefreshControl
                 refreshing={refeshing}
@@ -246,15 +214,15 @@ const CategoriesScreen = ({ navigation, route }) => {
               <View
                 style={[
                   styles.productCartContainer,
-                  { width: (windowWidth - windowWidth * 0.1) / 2 },
+                  { width: (windowWidth - windowWidth * 0.1) },
                 ]}
               >
                 <ProductCard
                   cardSize={"large"}
-                  name={product.title}
-                  image={`${network.serverip}/uploads/${product.image}`}
-                  price={product.price}
-                  quantity={product.quantity}
+                  name={product.itemName}
+                  image={product.image}
+                  price={product.salePrice}
+                  quantity={product.qty}
                   onPress={() => handleProductPress(product)}
                   onPressSecondary={() => handleAddToCat(product)}
                 />

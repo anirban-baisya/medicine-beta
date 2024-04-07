@@ -1,32 +1,33 @@
+import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import React, { useEffect, useState } from "react";
 import {
-  StyleSheet,
   Image,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
   TouchableOpacity,
   View,
-  StatusBar,
-  Text,
 } from "react-native";
-import React, { useState, useEffect } from "react";
-import { Ionicons } from "@expo/vector-icons";
-import cartIcon from "../../../assets/icons/cart_beg.png";
-import { colors, network } from "../../constants";
-import CustomButton from "../../components/CustomButton";
-import { useSelector, useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { bindActionCreators } from "redux";
-import * as actionCreaters from "../../states/actionCreaters/actionCreaters";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import cartIcon from "../../../assets/icons/cart_beg.png";
 import CustomAlert from "../../components/CustomAlert/CustomAlert";
+import CustomButton from "../../components/CustomButton";
+import { colors, network } from "../../constants";
+import { addProductToMyCart, deleteMyCartItem, removeMyCartItem } from "../../redux/slicers/myCartSlicer";
+import * as actionCreaters from "../../states/actionCreaters/actionCreaters";
 
 const ProductDetailScreen = ({ navigation, route }) => {
   const { product } = route.params;
-  const cartproduct = useSelector((state) => state.product);
+  const cartproduct = useSelector((state) => state.myCartReducer);
   const dispatch = useDispatch();
-
-  const { addCartItem } = bindActionCreators(actionCreaters, dispatch);
 
   //method to add item to cart(redux)
   const handleAddToCat = (item) => {
-    addCartItem(item);
+    dispatch(addProductToMyCart(item));
+    setQuantity(quantity + 1)
   };
 
   //remove the authUser from async storage and navigate to login
@@ -83,16 +84,21 @@ const ProductDetailScreen = ({ navigation, route }) => {
   };
 
   //method to increase the product quantity
-  const handleIncreaseButton = (quantity) => {
+  const handleIncreaseButton = (itemId, product) => {
     if (avaiableQuantity > quantity) {
-      setQuantity(quantity + 1);
+      dispatch(addProductToMyCart(product))
+      // setQuantity(quantity + 1);
     }
   };
 
   //method to decrease the product quantity
   const handleDecreaseButton = (quantity) => {
-    if (quantity > 0) {
-      setQuantity(quantity - 1);
+    if (quantity > 1) {
+      dispatch(removeMyCartItem(product))
+      // setQuantity(quantity - 1);
+    } else {
+      dispatch(deleteMyCartItem(product?.itemId));
+      // setQuantity(quantity - 1);
     }
   };
 
@@ -180,14 +186,23 @@ const ProductDetailScreen = ({ navigation, route }) => {
 
   //set quantity, avaiableQuantity, product image and fetch wishlist on initial render
   useEffect(() => {
-    setQuantity(0);
-    setAvaiableQuantity(product.quantity);
-    SetProductImage(`${network.serverip}/uploads/${product?.image}`);
-    fetchWishlist();
-  }, []);
+    let itemObj = cartproduct.find(item => item.itemId === product?.itemId)
+    if (itemObj) {
+      setQuantity(itemObj.purchaseQty);
+      setAvaiableQuantity(itemObj.qty);
+      SetProductImage(itemObj?.image);
+      fetchWishlist();
+    } else {
+      setQuantity(0);
+      setAvaiableQuantity(product.qty);
+      SetProductImage(product?.image);
+      fetchWishlist();
+    }
+  }, [cartproduct]);
+
 
   //render whenever the value of wishlistItems change
-  useEffect(() => {}, [wishlistItems]);
+  useEffect(() => { }, [wishlistItems]);
 
   return (
     <View style={styles.container}>
@@ -210,9 +225,9 @@ const ProductDetailScreen = ({ navigation, route }) => {
           style={styles.cartIconContainer}
           onPress={() => navigation.navigate("cart")}
         >
-          {cartproduct.length > 0 ? (
+          {cartproduct?.length > 0 ? (
             <View style={styles.cartItemCountContainer}>
-              <Text style={styles.cartItemCountText}>{cartproduct.length}</Text>
+              <Text style={styles.cartItemCountText}>{cartproduct?.length}</Text>
             </View>
           ) : (
             <></>
@@ -226,9 +241,9 @@ const ProductDetailScreen = ({ navigation, route }) => {
         </View>
         <CustomAlert message={error} type={alertType} />
         <View style={styles.productInfoContainer}>
-          <View style={styles.productInfoTopContainer}>
+          <ScrollView style={styles.productInfoTopContainer}>
             <View style={styles.productNameContaier}>
-              <Text style={styles.productNameText}>{product?.title}</Text>
+              <Text style={styles.productNameText}>{product?.itemName}</Text>
             </View>
             <View style={styles.infoButtonContainer}>
               <View style={styles.wishlistButtonContainer}>
@@ -249,18 +264,26 @@ const ProductDetailScreen = ({ navigation, route }) => {
               <View style={styles.productSizeOptionContainer}>
                 {/* <Text style={styles.secondaryTextSm}>Size:</Text> */}
               </View>
-              <View style={styles.productPriceContainer}>
+              {/* <View style={styles.productPriceContainer}>
                 <Text style={styles.secondaryTextSm}>Price:</Text>
-                <Text style={styles.primaryTextSm}>{product?.price}$</Text>
+                <Text tyle={styles.primaryTextSm}>{product?.salePrice}₹</Text>
+              </View> */}
+              <View style={styles.priceSection}>
+                <View style={styles.productPriceContainer}>
+                  <Text style={styles.discount}>-20% off</Text>
+                  <Text style={styles.primaryTextSm}>₹{product?.salePrice}</Text>
+                </View>
+                <Text style={{ color: colors.muted }}>M.R.P.:  <Text style={styles.originalPrice}>₹100</Text>
+                </Text>
               </View>
             </View>
             <View style={styles.productDescriptionContainer}>
               <Text style={styles.secondaryTextSm}>Description:</Text>
-              <Text>{product?.description}</Text>
+              <Text>{product?.medicalDescription}</Text>
             </View>
-          </View>
+          </ScrollView>
           <View style={styles.productInfoBottomContainer}>
-            <View style={styles.counterContainer}>
+            {quantity > 0 && <View style={styles.counterContainer}>
               <View style={styles.counter}>
                 <TouchableOpacity
                   style={styles.counterButtonContainer}
@@ -274,13 +297,13 @@ const ProductDetailScreen = ({ navigation, route }) => {
                 <TouchableOpacity
                   style={styles.counterButtonContainer}
                   onPress={() => {
-                    handleIncreaseButton(quantity);
+                    handleIncreaseButton(product?.itemId, product);
                   }}
                 >
                   <Text style={styles.counterButtonText}>+</Text>
                 </TouchableOpacity>
               </View>
-            </View>
+            </View>}
             <View style={styles.productButtonContainer}>
               {avaiableQuantity > 0 ? (
                 <CustomButton
@@ -342,7 +365,7 @@ const styles = StyleSheet.create({
   },
   productInfoContainer: {
     width: "100%",
-    flex: 3,
+    flex: 4.5,
     backgroundColor: colors.white,
     borderTopLeftRadius: 25,
     borderTopRightRadius: 25,
@@ -360,8 +383,8 @@ const styles = StyleSheet.create({
     marginTop: 20,
     display: "flex",
     flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "flex-start",
+    // alignItems: "center",
+    // justifyContent: "flex-start",
     height: "100%",
     width: "100%",
     flex: 1,
@@ -435,7 +458,7 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   secondaryTextSm: { fontSize: 15, fontWeight: "bold" },
-  primaryTextSm: { color: colors.primary, fontSize: 15, fontWeight: "bold" },
+  primaryTextSm: { color: colors.primary, fontSize: 20, fontWeight: "bold" },
   productDescriptionContainer: {
     display: "flex",
     width: "100%",
@@ -512,5 +535,23 @@ const styles = StyleSheet.create({
     color: colors.white,
     fontWeight: "bold",
     fontSize: 10,
+  },
+
+  productPriceContainer: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  priceSection: {
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+  },
+  originalPrice: {
+    textDecorationLine: 'line-through',
+    color: colors.muted,
+  },
+  discount: {
+    color: colors.danger,
+    fontWeight: '400',
+    fontSize: 20
   },
 });

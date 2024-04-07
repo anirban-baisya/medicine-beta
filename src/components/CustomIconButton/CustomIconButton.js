@@ -36,7 +36,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.white,
     borderRadius: 10,
     height: 40,
-    width: 110,
+    width: 140,
     elevation: 3,
     margin: 5,
   },
@@ -44,6 +44,8 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.muted,
     fontWeight: "bold",
+    textTransform:'capitalize',
+    maxWidth:100
   },
   buttonIcon: {
     height: 20,

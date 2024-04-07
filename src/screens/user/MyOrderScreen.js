@@ -13,7 +13,7 @@ import { Ionicons } from "@expo/vector-icons";
 import CustomAlert from "../../components/CustomAlert/CustomAlert";
 import ProgressDialog from "react-native-progress-dialog";
 import OrderList from "../../components/OrderList/OrderList";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { getAllOrderListApi } from "../../services/OrderDetail/getAllOrderListApi";
 
 const MyOrderScreen = ({ navigation, route }) => {
   const { user } = route.params;
@@ -25,12 +25,6 @@ const MyOrderScreen = ({ navigation, route }) => {
   const [orders, setOrders] = useState([]);
   const [UserInfo, setUserInfo] = useState({});
 
-  //method to remove the authUser from aysnc storage and navigate to login
-  const logout = async () => {
-    await AsyncStorage.removeItem("authUser");
-    navigation.replace("login");
-  };
-
   //method to convert the authUser to json object
   const convertToJSON = (obj) => {
     try {
@@ -40,16 +34,6 @@ const MyOrderScreen = ({ navigation, route }) => {
     }
   };
 
-  //method to convert the authUser to json object and return token
-  const getToken = (obj) => {
-    try {
-      setUserInfo(JSON.parse(obj));
-    } catch (e) {
-      setUserInfo(obj);
-      return user.token;
-    }
-    return UserInfo.token;
-  };
 
   //method call on pull refresh
   const handleOnRefresh = () => {
@@ -68,40 +52,29 @@ const MyOrderScreen = ({ navigation, route }) => {
 
   //fetch order from server using API call
   const fetchOrders = () => {
-    var myHeaders = new Headers();
-    let token = getToken(user);
-    myHeaders.append("x-auth-token", token);
-
-    var requestOptions = {
-      method: "GET",
-      headers: myHeaders,
-      redirect: "follow",
-    };
     setIsloading(true);
-    fetch(`${network.serverip}/orders`, requestOptions)
-      .then((response) => response.json())
-      .then((result) => {
-        if (result?.err === "jwt expired") {
-          logout();
-        }
-        if (result.success) {
-          setOrders(result.data);
-          setError("");
-        }
-        setIsloading(false);
-      })
-      .catch((error) => {
-        setIsloading(false);
-        setError(error.message);
-        console.log("error", error);
-      });
+
+    getAllOrderListApi(UserInfo.id).then((result) => {
+
+      // if (result.success) {
+        setOrders(result);
+        setError("");
+      // }
+
+      setIsloading(false);
+
+    }).catch((error) => {
+      setIsloading(false);
+      setError(error.message);
+      console.log("error", error);
+    });
   };
 
   //convert authUser to Json object and fetch orders on initial render
   useEffect(() => {
     convertToJSON(user);
     fetchOrders();
-  }, []);
+  }, [UserInfo]);
 
   return (
     <View style={styles.container}>
@@ -135,7 +108,7 @@ const MyOrderScreen = ({ navigation, route }) => {
         </View>
       </View>
       <CustomAlert message={error} type={alertType} />
-      {orders.length == 0 ? (
+      {orders?.length == 0 ? (
         <View style={styles.ListContiainerEmpty}>
           <Text style={styles.secondaryTextSmItalic}>
             "There are no orders placed yet."
@@ -152,7 +125,7 @@ const MyOrderScreen = ({ navigation, route }) => {
             />
           }
         >
-          {orders.map((order, index) => {
+          {orders?.map((order, index) => {
             return (
               <OrderList
                 item={order}

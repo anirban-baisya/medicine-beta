@@ -37,10 +37,10 @@ const CartProductList = ({
               <Image source={{ uri: image }} style={styles.productImage} />
             </View>
             <View style={styles.productInfoContainer}>
-              <Text style={styles.productTitle}>{title}</Text>
+              <Text numberOfLines={2} style={styles.productTitle}>{title}</Text>
               <Text style={styles.productQuantitySm}>x{quantity}</Text>
               <View style={styles.productListBottomContainer}>
-                <Text style={styles.productPrice}>{price * quantity} $</Text>
+                <Text style={styles.productPrice}>₹ {price * quantity}</Text>
 
                 <View style={styles.counter}>
                   <TouchableOpacity
@@ -106,9 +106,10 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
   },
   productTitle: {
-    fontSize: 18,
+    fontSize: 13,
     fontWeight: "bold",
     color: colors.dark,
+    maxWidth: 200,
   },
   productQuantitySm: {
     fontSize: 15,
@@ -138,7 +139,7 @@ const styles = StyleSheet.create({
   },
   counter: {
     backgroundColor: colors.white,
-    width: 150,
+    width: 120,
     marginLeft: 20,
     padding: 5,
     borderRadius: 5,

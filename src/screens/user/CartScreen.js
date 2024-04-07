@@ -1,65 +1,78 @@
+import { Ionicons, MaterialIcons } from "@expo/vector-icons";
+import React, { useEffect, useState } from "react";
 import {
-  StyleSheet,
   Image,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
   TouchableOpacity,
   View,
-  StatusBar,
-  Text,
-  ScrollView,
 } from "react-native";
-import React, { useEffect, useState } from "react";
-import { Ionicons } from "@expo/vector-icons";
+import { useDispatch, useSelector } from "react-redux";
 import cartIcon from "../../../assets/icons/cart_beg_active.png";
-import { colors, network } from "../../constants";
 import CartProductList from "../../components/CartProductList/CartProductList";
 import CustomButton from "../../components/CustomButton";
-import { MaterialIcons } from "@expo/vector-icons";
-import { useSelector, useDispatch } from "react-redux";
-import * as actionCreaters from "../../states/actionCreaters/actionCreaters";
-import { bindActionCreators } from "redux";
+import { colors } from "../../constants";
+import { addProductToMyCart, deleteMyCartItem, removeMyCartItem } from "../../redux/slicers/myCartSlicer";
+import CustomAlert from "../../components/CustomAlert/CustomAlert";
 
 const CartScreen = ({ navigation }) => {
-  const cartproduct = useSelector((state) => state.product);
+  const cartproduct = useSelector((state) => state.myCartReducer);
   const [totalPrice, setTotalPrice] = useState(0);
   const [refresh, setRefresh] = useState(false);
+  const [error, setError] = useState("");
+  const [alertType, setAlertType] = useState("error");
   const dispatch = useDispatch();
 
-  const { removeCartItem, increaseCartItemQuantity, decreaseCartItemQuantity } =
-    bindActionCreators(actionCreaters, dispatch);
 
   //method to remove the item from (cart) redux
   const deleteItem = (id) => {
-    removeCartItem(id);
+    dispatch(deleteMyCartItem(id));
   };
 
   //method to increase the quantity of the item in(cart) redux
-  const increaseQuantity = (id, quantity, avaiableQuantity) => {
+  const increaseQuantity = (item, quantity, avaiableQuantity) => {
     if (avaiableQuantity > quantity) {
-      increaseCartItemQuantity({ id: id, type: "increase" });
+      dispatch(addProductToMyCart(item));
       setRefresh(!refresh);
     }
   };
 
   //method to decrease the quantity of the item in(cart) redux
-  const decreaseQuantity = (id, quantity) => {
+  const decreaseQuantity = (item, quantity) => {
     if (quantity > 1) {
-      decreaseCartItemQuantity({ id: id, type: "decrease" });
+      dispatch(removeMyCartItem(item));
       setRefresh(!refresh);
     }
   };
 
-  //calcute and the set the total price whenever the value of carproduct change
+  //calcute and the set the total price whenever the value of carproduct change & rounding the result to two decimal places 
   useEffect(() => {
     setTotalPrice(
-      cartproduct.reduce((accumulator, object) => {
-        return accumulator + object.price * object.quantity;
-      }, 0)
+      (Math.round(
+        cartproduct.reduce((accumulator, object) => {
+          return accumulator + object.salePrice * object.purchaseQty;
+        }, 0) * 100) / 100).toFixed(2)
     );
   }, [cartproduct, refresh]);
+
+  //method to handle checkout
+  const handleCheckout = () => {
+    if (totalPrice < 700) {
+      setError("Minimum order amount should be greater than or equal to 700");
+      setAlertType("error");
+      setTimeout(() => setAlertType(""), 3000);
+      return;
+    }
+    navigation.navigate("checkout");
+  }
 
   return (
     <View style={styles.container}>
       <StatusBar></StatusBar>
+      {alertType && <CustomAlert message={error} type={alertType} />}
+
       <View style={styles.topBarContainer}>
         <View style={styles.cartInfoContainerTopBar}>
           <TouchableOpacity
@@ -75,7 +88,7 @@ const CartScreen = ({ navigation }) => {
           </TouchableOpacity>
           <View style={styles.cartInfoTopBar}>
             <Text>Your Cart</Text>
-            <Text>{cartproduct.length} Items</Text>
+            <Text>{cartproduct?.length} Items</Text>
           </View>
         </View>
 
@@ -84,7 +97,7 @@ const CartScreen = ({ navigation }) => {
           <Image source={cartIcon} />
         </TouchableOpacity>
       </View>
-      {cartproduct.length === 0 ? (
+      {cartproduct?.length === 0 ? (
         <View style={styles.cartProductListContiainerEmpty}>
           {/* <Image
             source={CartEmpty}
@@ -94,26 +107,26 @@ const CartScreen = ({ navigation }) => {
         </View>
       ) : (
         <ScrollView style={styles.cartProductListContiainer}>
-          {cartproduct.map((item, index) => (
+          {cartproduct?.map((item, index) => (
             <CartProductList
               key={index}
               index={index}
-              image={`${network.serverip}/uploads/${item.image}`}
-              title={item.title}
-              price={item.price}
-              quantity={item.quantity}
+              image={item.image}
+              title={item.itemName}
+              price={item.salePrice}
+              quantity={item.purchaseQty}
               onPressIncrement={() => {
                 increaseQuantity(
-                  item._id,
-                  item.quantity,
-                  item.avaiableQuantity
+                  item,
+                  item.purchaseQty,
+                  item.qty,
                 );
               }}
               onPressDecrement={() => {
-                decreaseQuantity(item._id, item.quantity);
+                decreaseQuantity(item, item.purchaseQty);
               }}
               handleDelete={() => {
-                deleteItem(item._id);
+                deleteItem(item.itemId);
               }}
             />
           ))}
@@ -131,14 +144,14 @@ const CartScreen = ({ navigation }) => {
           </View>
           <View>
             <Text style={styles.cartBottomPrimaryText}>Total</Text>
-            <Text style={styles.cartBottomSecondaryText}>{totalPrice}$</Text>
+            <Text style={styles.cartBottomSecondaryText}>₹ {totalPrice}</Text>
           </View>
         </View>
         <View style={styles.cartBottomRightContainer}>
-          {cartproduct.length > 0 ? (
+          {cartproduct?.length > 0 ? (
             <CustomButton
               text={"Checkout"}
-              onPress={() => navigation.navigate("checkout")}
+              onPress={handleCheckout}
             />
           ) : (
             <CustomButton

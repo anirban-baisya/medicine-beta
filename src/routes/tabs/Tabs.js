@@ -15,7 +15,7 @@ import CategoriesScreen from "../../screens/user/CategoriesScreen";
 const Tab = createBottomTabNavigator();
 
 const Tabs = ({ navigation, route }) => {   
-  const { user } = route.params;
+  const { user, categoryList } = route.params;
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -106,7 +106,7 @@ const Tabs = ({ navigation, route }) => {
       <Tab.Screen
         name="home"
         component={HomeScreen}
-        initialParams={{ user: user }}
+        initialParams={{ user: user , categoryList: categoryList}}
         tabBarOptions={{
           style: {
             position: "absolute",
@@ -116,7 +116,7 @@ const Tabs = ({ navigation, route }) => {
       <Tab.Screen
         name="categories"
         component={CategoriesScreen}
-        initialParams={{ user: user }}
+        initialParams={{ user: user, categoryList: categoryList }}
         tabBarOptions={{
           tabBarHideOnKeyboard: true,
           style: {

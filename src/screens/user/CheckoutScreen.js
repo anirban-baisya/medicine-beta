@@ -18,86 +18,74 @@ import { bindActionCreators } from "redux";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import CustomInput from "../../components/CustomInput";
 import ProgressDialog from "react-native-progress-dialog";
+import { orderCreateApi } from "../../services/Checkout/orderCreateApi";
+import { resetMyCart } from "../../redux/slicers/myCartSlicer";
 
 const CheckoutScreen = ({ navigation, route }) => {
+
   const [modalVisible, setModalVisible] = useState(false);
   const [isloading, setIsloading] = useState(false);
-  const cartproduct = useSelector((state) => state.product);
+  // const cartproduct = useSelector((state) => state.product);
+  const cartproduct = useSelector((state) => state.myCartReducer);
   const dispatch = useDispatch();
   const { emptyCart } = bindActionCreators(actionCreaters, dispatch);
 
+  const [userInfo, setUserInfo] = useState({});
   const [deliveryCost, setDeliveryCost] = useState(0);
   const [totalCost, setTotalCost] = useState(0);
   const [address, setAddress] = useState("");
-  const [country, setCountry] = useState("");
+  const [landMark, setLandMark] = useState("");
   const [city, setCity] = useState("");
   const [streetAddress, setStreetAddress] = useState("");
   const [zipcode, setZipcode] = useState("");
 
-  //method to remove the authUser from aysnc storage and navigate to login
-  const logout = async () => {
-    await AsyncStorage.removeItem("authUser");
-    navigation.replace("login");
-  };
+
+  const getUserInfo = async () => {
+    const userData = await AsyncStorage.getItem('authUser');
+    const userInfo = JSON.parse(userData);
+    setUserInfo(userInfo)
+  }
 
   //method to handle checkout
   const handleCheckout = async () => {
     setIsloading(true);
-    var myHeaders = new Headers();
-    const value = await AsyncStorage.getItem("authUser");
-    let user = JSON.parse(value);
-    console.log("Checkout:", user.token);
-
-    myHeaders.append("x-auth-token", user.token);
-    myHeaders.append("Content-Type", "application/json");
-
     var payload = [];
     var totalamount = 0;
 
     // fetch the cart items from redux and set the total cost
     cartproduct.forEach((product) => {
       let obj = {
-        productId: product._id,
-        price: product.price,
-        quantity: product.quantity,
+        itemId: product.itemId,
+        price: product.salePrice,
+        qty: product.purchaseQty,
       };
-      totalamount += parseInt(product.price) * parseInt(product.quantity);
+      totalamount += parseInt(product.salePrice) * parseInt(product.purchaseQty);
       payload.push(obj);
     });
 
-    var raw = JSON.stringify({
+    var data = {
       items: payload,
+      userId: userInfo.id,
       amount: totalamount,
       discount: 0,
-      payment_type: "cod",
-      country: country,
+      paymentType: "cod",
+      landMark: landMark,
       status: "pending",
       city: city,
       zipcode: zipcode,
       shippingAddress: streetAddress,
-    });
-
-    var requestOptions = {
-      method: "POST",
-      headers: myHeaders,
-      body: raw,
-      redirect: "follow",
     };
 
-    fetch(network.serverip + "/checkout", requestOptions) //API call
-      .then((response) => response.json())
-      .then((result) => {
-        console.log("Checkout=>", result);
-        if (result.err === "jwt expired") {
-          setIsloading(false);
-          logout();
-        }
-        if (result.success == true) {
-          setIsloading(false);
-          emptyCart("empty");
-          navigation.replace("orderconfirm");
-        }
-      })
+    // console.log("payload---->>", userInfo);
+
+    orderCreateApi(data).then((result) => {
+      console.log("Checkout=>", result);
+      if (result.success == true) {
+        setIsloading(false);
+        dispatch(resetMyCart());
+        navigation.replace("orderconfirm");
+      }
+    })
       .catch((error) => {
         setIsloading(false);
         console.log("error", error);
@@ -106,15 +94,18 @@ const CheckoutScreen = ({ navigation, route }) => {
 
   // set the address and total cost on initital render
   useEffect(() => {
-    if (streetAddress && city && country != "") {
-      setAddress(`${streetAddress}, ${city},${country}`);
+    if (streetAddress && city && landMark != "") {
+      setAddress(`${streetAddress}, ${city},${landMark}`);
     } else {
       setAddress("");
     }
+    getUserInfo();
+    setDeliveryCost(50);
     setTotalCost(
+      (Math.round(
       cartproduct.reduce((accumulator, object) => {
-        return accumulator + object.price * object.quantity;
-      }, 0)
+        return accumulator + object.salePrice * object.purchaseQty;
+      }, 0)* 100) / 100).toFixed(2)
     );
   }, []);
 
@@ -146,9 +137,9 @@ const CheckoutScreen = ({ navigation, route }) => {
           {cartproduct.map((product, index) => (
             <BasicProductList
               key={index}
-              title={product.title}
-              price={product.price}
-              quantity={product.quantity}
+              title={product.itemName}
+              price={product.salePrice}
+              quantity={product.purchaseQty}
             />
           ))}
         </ScrollView>
@@ -156,16 +147,16 @@ const CheckoutScreen = ({ navigation, route }) => {
         <View style={styles.totalOrderInfoContainer}>
           <View style={styles.list}>
             <Text>Order</Text>
-            <Text>{totalCost}$</Text>
+            <Text>₹ {totalCost}</Text>
           </View>
           <View style={styles.list}>
             <Text>Delivery</Text>
-            <Text>{deliveryCost}$</Text>
+            <Text>₹ {deliveryCost}</Text>
           </View>
           <View style={styles.list}>
             <Text style={styles.primaryTextSm}>Total</Text>
             <Text style={styles.secondaryTextSm}>
-              {totalCost + deliveryCost}$
+              ₹ {totalCost + deliveryCost}
             </Text>
           </View>
         </View>
@@ -174,12 +165,12 @@ const CheckoutScreen = ({ navigation, route }) => {
           <View style={styles.list}>
             <Text style={styles.secondaryTextSm}>Email</Text>
             <Text style={styles.secondaryTextSm}>
-              bukhtyar.haider1@gmail.com
+              {userInfo?.email}
             </Text>
           </View>
           <View style={styles.list}>
             <Text style={styles.secondaryTextSm}>Phone</Text>
-            <Text style={styles.secondaryTextSm}>+92 3410988683</Text>
+            <Text style={styles.secondaryTextSm}>+91 {userInfo?.phoneNo}</Text>
           </View>
         </View>
         <Text style={styles.primaryText}>Address</Text>
@@ -190,7 +181,7 @@ const CheckoutScreen = ({ navigation, route }) => {
           >
             <Text style={styles.secondaryTextSm}>Address</Text>
             <View>
-              {country || city || streetAddress != "" ? (
+              {landMark || city || streetAddress != "" ? (
                 <Text
                   style={styles.secondaryTextSm}
                   numberOfLines={1}
@@ -217,7 +208,7 @@ const CheckoutScreen = ({ navigation, route }) => {
         <View style={styles.emptyView}></View>
       </ScrollView>
       <View style={styles.buttomContainer}>
-        {country && city && streetAddress != "" ? (
+        {landMark && city && streetAddress != "" ? (
           <CustomButton
             text={"Submit Order"}
             // onPress={() => navigation.replace("orderconfirm")}
@@ -240,11 +231,6 @@ const CheckoutScreen = ({ navigation, route }) => {
         <View style={styles.modelBody}>
           <View style={styles.modelAddressContainer}>
             <CustomInput
-              value={country}
-              setValue={setCountry}
-              placeholder={"Enter Country"}
-            />
-            <CustomInput
               value={city}
               setValue={setCity}
               placeholder={"Enter City"}
@@ -255,16 +241,21 @@ const CheckoutScreen = ({ navigation, route }) => {
               placeholder={"Enter Street Address"}
             />
             <CustomInput
+              value={landMark}
+              setValue={setLandMark}
+              placeholder={"Enter Landmark"}
+            />
+            <CustomInput
               value={zipcode}
               setValue={setZipcode}
-              placeholder={"Enter ZipCode"}
+              placeholder={"Enter PinCode"}
               keyboardType={"number-pad"}
             />
-            {streetAddress || city || country != "" ? (
+            {streetAddress || city || landMark != "" ? (
               <CustomButton
                 onPress={() => {
                   setModalVisible(!modalVisible);
-                  setAddress(`${streetAddress}, ${city},${country}`);
+                  setAddress(`${streetAddress}, ${city},${landMark}`);
                 }}
                 text={"save"}
               />

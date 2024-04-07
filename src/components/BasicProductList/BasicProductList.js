@@ -1,22 +1,22 @@
 import { StyleSheet, Text, View } from "react-native";
 import React from "react";
 import { colors } from "../../constants";
-import { Ionicons } from "@expo/vector-icons";
+import { FontAwesome5 } from "@expo/vector-icons";
 
 const BasicProductList = ({ title, price, quantity }) => {
   return (
     <View style={styles.container}>
       <View style={styles.innerContainer}>
         <View style={styles.IconContainer}>
-          <Ionicons name="square" size={30} color={colors.muted} />
+          <FontAwesome5 name="tablets" size={25} color={colors.muted} />
         </View>
         <View style={styles.productInfoContainer}>
-          <Text style={styles.secondaryText}>{title}</Text>
+          <Text numberOfLines={2} style={styles.secondaryText}>{title}</Text>
           <Text>x{quantity}</Text>
         </View>
       </View>
       <View>
-        <Text style={styles.primaryText}>{quantity * price}$</Text>
+        <Text style={styles.primaryText}>₹ {quantity * price}</Text>
       </View>
     </View>
   );
@@ -64,7 +64,8 @@ const styles = StyleSheet.create({
     color: colors.primary,
   },
   secondaryText: {
-    fontSize: 15,
+    fontSize: 13,
     fontWeight: "600",
+    maxWidth: 170,
   },
 });

@@ -16,84 +16,67 @@ import CustomAlert from "../../components/CustomAlert/CustomAlert";
 import CustomButton from "../../components/CustomButton";
 import CustomInput from "../../components/CustomInput";
 import { colors, network } from "../../constants";
+import { orderWithPrescriApi } from "../../services/Quick Order/orderWithPrescriApi";
 
 const UploadPrescriScreen = ({ navigation, route }) => {
   const { userInfo } = route.params;
   const [isloading, setIsloading] = useState(false);
   const [phoneNo, setPhoneNo] = useState("");
-  const [image, setImage] = useState("");
+  const [pickedImage, setPickedImage] = useState({});
   const [error, setError] = useState("");
   const [description, setDescription] = useState("");
   const [alertType, setAlertType] = useState("error");
   var payload = [];
 
 
-  const upload = async () => {
-    console.log("upload-F:", image);
 
-    var formdata = new FormData();
-    formdata.append("photos", image, "product.png");
-
-    var ImageRequestOptions = {
-      method: "POST",
-      body: formdata,
-      redirect: "follow",
-    };
-
-    fetch(
-      "https://api-easybuy.herokuapp.com/photos/upload",
-      ImageRequestOptions
-    )
-      .then((response) => response.json())
-      .then((result) => {
-        console.log(result);
-      })
-      .catch((error) => console.log("error", error));
-  };
-
-
-  //Method for selecting the image from device gallery
+  //Method for selecting the pickedImage from device gallery
   const pickImage = async () => {
-    // No permissions request is necessary for launching the image library
+    // No permissions request is necessary for launching the pickedImage library
     let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.All,
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: [1, 1],
       quality: 0.5,
+      mediaType: 'photo',
+      base64: true,
     });
 
-    if (!result.cancelled) {
-      console.log(result);
-      setImage(result.uri);
-      upload();
+    if (!result.canceled) {
+      setPickedImage(result?.assets[0]);
     }
   };
 
   //Method for imput validation and post data to server to insert product using API call
   const uploadDetailsHandle = () => {
     setIsloading(true);
+    const indianNoRegex = /^[6-9]{1}[0-9]{9}$/;
 
     //[check validation] -- Start
-    // if (phoneNo == "") {
-    //   setError("Please enter your phoneNo");
-    //   setIsloading(false);
-    // } else if (phoneNo.length == 10) {
-    //   setError("Please enter valid 10 digit phoneNo");
-    //   setIsloading(false);
-    // } else if (image == null) {
-     if (image == null) {
-      setError("Please upload the product image");
+    if (phoneNo == "") {
+      setError("Please enter your phoneNo");
+      setIsloading(false);
+    } else if (indianNoRegex.test(phoneNo) != true) {
+      setError("Please enter valid 10 digit phoneNo");
+      setIsloading(false);
+    } else if (Object.keys(pickedImage).length == 0) {
+      setError("Please upload the prescription image");
       setIsloading(false);
     } else {
       //[check validation] -- End
-      fetch(network.serverip + "/product", requestOptions)
-        .then((response) => response.json())
-        .then((result) => {
-          console.log(result);
+      data = {
+        userId: "1",
+        prescription: 'data:image/jpeg;base64,' + pickedImage?.base64,
+        phoneNumber: phoneNo,
+        description: description
+      }
+      orderWithPrescriApi(data).then((result) => {
+  
           if (result.success == true) {
             setIsloading(false);
             setAlertType("success");
             setError(result.message);
+            setPhoneNo(''), setPickedImage({}), setDescription("")
           }
         })
         .catch((error) => {
@@ -126,7 +109,7 @@ const UploadPrescriScreen = ({ navigation, route }) => {
       </View>
       <View style={styles.screenNameContainer}>
         <View>
-          <Text style={styles.screenNameText}>Upload Prescription</Text>
+          <Text style={styles.screenNameText}>Upload Prescription / Medicine List</Text>
         </View>
         <View>
           <Text style={styles.screenNameParagraph}>Add prescription details</Text>
@@ -139,10 +122,10 @@ const UploadPrescriScreen = ({ navigation, route }) => {
       >
         <View style={styles.formContainer}>
           <View style={styles.imageContainer}>
-            {image ? (
+            {Object.keys(pickedImage).length > 0 ? (
               <TouchableOpacity style={styles.imageHolder} onPress={pickImage}>
                 <Image
-                  source={{ uri: image }}
+                  source={{ uri: 'data:image/jpeg;base64,' + pickedImage?.base64 }}
                   style={{ width: 200, height: 200 }}
                 />
               </TouchableOpacity>
@@ -161,7 +144,7 @@ const UploadPrescriScreen = ({ navigation, route }) => {
             radius={5}
             keyboardType={"number-pad"}
           />
-          
+
           <CustomInput
             inputType={'TextArea'}
             numberOfLines={5}
@@ -213,7 +196,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
     width: "100%",
   },
-  
+
   screenNameContainer: {
     marginTop: 10,
     width: "100%",
@@ -223,7 +206,7 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
   },
   screenNameText: {
-    fontSize: 30,
+    fontSize: 25,
     fontWeight: "800",
     color: colors.muted,
   },

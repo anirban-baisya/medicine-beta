@@ -1,7 +1,7 @@
-import { StyleSheet, Text, TouchableOpacity, View, Image } from "react-native";
-import React from "react";
-import { colors, network } from "../../constants";
 import { Ionicons } from "@expo/vector-icons";
+import React from "react";
+import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { colors } from "../../constants";
 
 const ProductCard = ({
   name,
@@ -21,12 +21,14 @@ const ProductCard = ({
         <Image source={{ uri: image }} style={styles.productImage} />
       </View>
       <View style={styles.infoContainer}>
-        <View>
-          <Text style={styles.secondaryTextSm}>{`${name.substring(
+        <View style={{maxWidth:'85%'}}>
+          {/* <Text style={styles.secondaryTextSm}>{`${name.substring(
             0,
             10
-          )}..`}</Text>
-          <Text style={styles.primaryTextSm}>{price}$</Text>
+          )}..`}</Text> */}
+            <Text numberOfLines={1} style={styles.secondaryTextSm}>{`${name.split(')')[1] || name}`}</Text>
+          
+          <Text style={styles.primaryTextSm}> ₹ {price} </Text>
         </View>
         <View>
           {quantity > 0 ? (
@@ -97,8 +99,8 @@ const styles = StyleSheet.create({
   },
   iconContainer: {
     backgroundColor: colors.primary,
-    width: 30,
-    height: 30,
+    width: 35,
+    height: 35,
     borderRadius: 5,
     display: "flex",
 
@@ -107,8 +109,8 @@ const styles = StyleSheet.create({
   },
   iconContainerDisable: {
     backgroundColor: colors.muted,
-    width: 30,
-    height: 30,
+    width: 35,
+    height: 35,
     borderRadius: 5,
     display: "flex",
 

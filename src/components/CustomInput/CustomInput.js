@@ -14,7 +14,8 @@ const CustomInput = ({
   width = "100%",
   keyboardType,
   maxLength,
-  numberOfLines
+  numberOfLines,
+  onSubmitEditing
 }) => {
   return (
     <View style={{ width: width }}>
@@ -32,6 +33,17 @@ const CustomInput = ({
         multiline
         numberOfLines={numberOfLines}
       />
+     : inputType=='Search' ?<TextInput
+                    mode={"outlined"}
+                    returnKeyType="search"
+                    placeholder={placeholder}
+                    autoFocus
+                    dense
+                    style={styles.CustomInput}
+                    value={value}
+                    onChangeText={setValue}
+                    onSubmitEditing={onSubmitEditing}
+                /> 
      : <TextInput
         placeholder={placeholder}
         onChangeText={setValue}

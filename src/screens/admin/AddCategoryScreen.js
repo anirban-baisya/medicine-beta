@@ -74,7 +74,6 @@ const AddCategoryScreen = ({ navigation, route }) => {
       fetch(network.serverip + "/category", requestOptions) //API call
         .then((response) => response.json())
         .then((result) => {
-          console.log(result);
           if (result.success == true) {
             setIsloading(false);
             setAlertType("success");

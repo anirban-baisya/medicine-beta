@@ -6,11 +6,15 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const OrderConfirmScreen = ({ navigation }) => {
   const [user, setUser] = useState({});
+  const [categoryList, setCategoryList] = useState([]);
 
   //method to get authUser from async storage
   const getUserData = async () => {
     const value = await AsyncStorage.getItem("authUser");
+    const list = await AsyncStorage.getItem("categoryList");
+
     setUser(JSON.parse(value));
+    setCategoryList(JSON.parse(list));
   };
 
   //fetch user data on initial render
@@ -24,11 +28,11 @@ const OrderConfirmScreen = ({ navigation }) => {
       <View style={styles.imageConatiner}>
         <Image source={SuccessImage} style={styles.Image} />
       </View>
-      <Text style={styles.secondaryText}>Order has be confirmed</Text>
+      <Text style={styles.secondaryText}>Yay!! Order has been confirmed</Text>
       <View>
         <CustomButton
           text={"Back to Home"}
-          onPress={() => navigation.replace("tab", { user: user })}
+          onPress={() => navigation.replace("tab", { user: user , categoryList: categoryList})}
         />
       </View>
     </View>

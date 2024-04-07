@@ -20,6 +20,7 @@ import InternetConnectionAlert from "react-native-internet-connection-alert";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useDispatch, useSelector } from "react-redux";
 import { onUserLoginSubmit } from "../../redux/slicers/loginSlicer";
+import { getAllCategoriesApi } from "../../services/Categories&Items/getAllCategoriesApi";
 
 const LoginScreen = ({ navigation }) => {
   const dispatch = useDispatch();
@@ -29,6 +30,7 @@ const LoginScreen = ({ navigation }) => {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isloading, setIsloading] = useState(false);
+  const [categoryList, setCategoryList] = useState([]);
 
   //method to store the authUser to aync storage
   _storeData = async (dataType, user) => {
@@ -80,7 +82,18 @@ const LoginScreen = ({ navigation }) => {
     );
   };
 
+  const fetchCategoryList = async () => {
+    const result = await getAllCategoriesApi();
+     setCategoryList(result);
+    await AsyncStorage.setItem("categoryList", JSON.stringify(result) );
 
+  };
+
+  useEffect(() => {
+    fetchCategoryList();
+  }, []);
+
+  
   useEffect(() => {
 
     if (
@@ -97,7 +110,7 @@ const LoginScreen = ({ navigation }) => {
         _storeData('userDetails', loginUserInfo.userDetails);
         _storeData('token', loginUserInfo.token);
         setIsloading(false);
-        navigation.replace("tab", { user: loginUserInfo.userDetails }); // naviagte to User Dashboard
+        navigation.replace("tab", { user: loginUserInfo.userDetails, categoryList: categoryList }); // naviagte to User Dashboard
       }
     } else if (loginUserInfo != null) {
       setIsloading(false);
