@@ -50,7 +50,6 @@ const SearchScreen = ({ navigation, router }) => {
             paginate: pagination.paginate
         }
         findItemsBySearchQueryApi(payload).then((data) => {
-            console.log("searchItems", data);
 
             const totalItems = [
                 ...searchResults.itemsList,
@@ -141,7 +140,6 @@ const SearchScreen = ({ navigation, router }) => {
     };
 
 
-    console.log(searchResults, "searchResults.itemsList");
     return (
         <SafeAreaView style={{ flex: 1, paddingTop: top + 10 }}>
             <View

@@ -75,7 +75,6 @@ const SignupScreen = ({ navigation }) => {
 
 
   useEffect(() => {
-    console.log(registerUserInfo, 'registerUserInfo--->');
     if (registerUserInfo?.success) {
       navigation.navigate("login");
     } else if (registerUserInfo != null && registerUserInfo?.success == false) {

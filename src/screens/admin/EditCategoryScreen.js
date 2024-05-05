@@ -1,90 +1,97 @@
+import { AntDesign, Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as ImagePicker from "expo-image-picker";
+import React, { useEffect, useState } from "react";
 import {
-  StyleSheet,
-  Text,
   Image,
-  StatusBar,
-  View,
   KeyboardAvoidingView,
   ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
   TouchableOpacity,
+  View,
 } from "react-native";
-import React, { useState, useEffect } from "react";
-import { colors, network } from "../../constants";
-import CustomInput from "../../components/CustomInput";
-import CustomButton from "../../components/CustomButton";
-import { Ionicons } from "@expo/vector-icons";
-import CustomAlert from "../../components/CustomAlert/CustomAlert";
-import * as ImagePicker from "expo-image-picker";
 import ProgressDialog from "react-native-progress-dialog";
-import { AntDesign } from "@expo/vector-icons";
+import CustomAlert from "../../components/CustomAlert/CustomAlert";
+import CustomButton from "../../components/CustomButton";
+import CustomInput from "../../components/CustomInput";
+import { colors } from "../../constants";
+import { editCategoryApi } from "../../services/Admin_Api/Category/editCategoryApi";
+import { getAllCategoriesApi } from "../../services/Categories&Items/getAllCategoriesApi";
 
 const EditCategoryScreen = ({ navigation, route }) => {
-  const { category, authUser } = route.params;
+  const { category } = route.params;
   const [isloading, setIsloading] = useState(false);
   const [title, setTitle] = useState("");
-  const [image, setImage] = useState("easybuycat.png");
-  const [description, setDescription] = useState("");
+  const [pickedImage, setPickedImage] = useState("");
+
   const [error, setError] = useState("");
   const [alertType, setAlertType] = useState("error");
-  const [user, setUser] = useState({});
+
+  const pickImage = async () => {
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.5,
+      mediaType: 'photo',
+      base64: true,
+    });
+
+    if (!result.canceled) {
+      setPickedImage(result?.assets[0]);
+    }
+
+  };
+  
+  const fetchCategoryList = async () => {
+    const result = await getAllCategoriesApi();
+    await AsyncStorage.setItem("categoryList", JSON.stringify(result) );
+  };
 
   //Method to post the data to server to edit the category using API call
   const editCategoryHandle = (id) => {
-    var myHeaders = new Headers();
-    myHeaders.append("x-auth-token", authUser.token);
-    myHeaders.append("Content-Type", "application/json");
-
-    var raw = JSON.stringify({
-      title: title,
-      image: image,
-      description: description,
-    });
-
-    var requestOptions = {
-      method: "POST",
-      headers: myHeaders,
-      body: raw,
-      redirect: "follow",
-    };
-
+    
     setIsloading(true);
     //[check validations] -- Start
     if (title == "") {
       setError("Please enter the product title");
       setIsloading(false);
-    } else if (description == "") {
-      setError("Please upload the product image");
-      setIsloading(false);
-    } else if (image == null) {
+    } else if (Object.keys(pickedImage).length == 0) {
       setError("Please upload the Catergory image");
       setIsloading(false);
     } else {
       //[check validations] -- End
-      fetch(`${network.serverip}/update-category?id=${id}`, requestOptions)
-        .then((response) => response.json())
-        .then((result) => {
-          console.log(result);
-          if (result.success == true) {
-            setIsloading(false);
-            setAlertType("success");
-            setError(result.message);
-            setTitle(result.data.title);
-            setDescription(result.data.description);
-          }
-        })
+    
+      data = {
+        categoryId: id,
+        title: title,
+        // image: 'data:image/jpeg;base64,' + pickedImage?.base64,
+      }
+
+      editCategoryApi(data).then((result) => {
+
+        if (result.success == true) {
+          fetchCategoryList()
+          setIsloading(false);
+          setAlertType("success");
+          setError(result.message);
+        }
+      })
         .catch((error) => {
           setIsloading(false);
           setError(error.message);
           setAlertType("error");
           console.log("error", error);
         });
+
     }
   };
 
   //inilize the title and description input fields on initial render
   useEffect(() => {
     setTitle(category?.title);
-    setDescription(category?.description);
   }, []);
 
   return (
@@ -94,7 +101,6 @@ const EditCategoryScreen = ({ navigation, route }) => {
       <View style={styles.TopBarContainer}>
         <TouchableOpacity
           onPress={() => {
-            // navigation.replace("viewproduct", { authUser: authUser });
             navigation.goBack();
           }}
         >
@@ -119,6 +125,22 @@ const EditCategoryScreen = ({ navigation, route }) => {
         style={{ flex: 1, width: "100%" }}
       >
         <View style={styles.formContainer}>
+
+        <View style={styles.imageContainer}> 
+            {Object.keys(pickedImage).length > 0 ? (
+              <TouchableOpacity style={styles.imageHolder} onPress={pickImage}>
+                <Image
+                  source={{ uri: 'data:image/jpeg;base64,' + pickedImage?.base64 }}
+                  style={{ width: 200, height: 200 }}
+                />
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity style={styles.imageHolder} onPress={pickImage}>
+                <AntDesign name="pluscircle" size={50} color={colors.muted} />
+              </TouchableOpacity>
+            )}
+          </View>
+
           <CustomInput
             value={title}
             setValue={setTitle}
@@ -127,13 +149,6 @@ const EditCategoryScreen = ({ navigation, route }) => {
             radius={5}
           />
 
-          <CustomInput
-            value={description}
-            setValue={setDescription}
-            placeholder={"Description"}
-            placeholderTextColor={colors.muted}
-            radius={5}
-          />
         </View>
       </ScrollView>
 
@@ -141,7 +156,7 @@ const EditCategoryScreen = ({ navigation, route }) => {
         <CustomButton
           text={"Edit Category"}
           onPress={() => {
-            editCategoryHandle(category?._id);
+            editCategoryHandle(category?.categoryId);
           }}
         />
       </View>

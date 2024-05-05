@@ -1,9 +1,9 @@
-import { StyleSheet, Text, View } from "react-native";
-import React from "react";
 import { Ionicons } from "@expo/vector-icons";
+import React from "react";
+import { StyleSheet, Text, View } from "react-native";
 import { colors } from "../../constants";
 
-const UserList = ({ username, email }) => {
+const UserList = ({ username, email, userId, phoneNumber, isActive }) => {
   return (
     <View style={styles.container}>
       <View style={styles.profileContainer}>
@@ -15,7 +15,9 @@ const UserList = ({ username, email }) => {
       </View>
       <View style={styles.userInfoContainer}>
         <Text style={styles.usernameText}>{username}</Text>
-        <Text style={styles.userEmailText}>{email}</Text>
+        <Text style={styles.userSubText}>{email}</Text>
+        <Text style={styles.userSubText}>{phoneNumber}</Text>
+        <Text style={[styles.userSubText, isActive ? { color: colors.success } : { color: colors.danger }]}>{isActive ?'Active' :'Inactive'}</Text>
       </View>
     </View>
   );
@@ -30,7 +32,7 @@ const styles = StyleSheet.create({
     justifyContent: "flex-start",
     alignItems: "center",
     backgroundColor: colors.white,
-    height: 70,
+    height: 90,
     borderRadius: 10,
     elevation: 2,
     marginLeft: 10,
@@ -49,7 +51,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     fontSize: 15,
   },
-  userEmailText: {
+  userSubText: {
     fontSize: 13,
     fontWeight: "600",
     color: colors.muted,

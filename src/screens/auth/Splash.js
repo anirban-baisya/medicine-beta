@@ -1,7 +1,7 @@
-import { StyleSheet, Image, View } from "react-native";
 import React, { useEffect } from "react";
-import { colors } from "../../constants";
+import { Image, StyleSheet, View } from "react-native";
 import logo from "../../../assets/logo/logo_white2.png";
+import { colors } from "../../constants";
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
@@ -16,7 +16,7 @@ const Splash = ({ navigation }) => {
         let categoryList = JSON.parse(list); 
         if (user.userType === "ADMIN") {
           setTimeout(() => {
-            navigation.replace("dashboard", { authUser: JSON.parse(value) }); // navigate to Admin dashboard
+            navigation.replace("dashboard", { authUser: JSON.parse(value), categoryList }); // navigate to Admin dashboard
           }, 2000);
         } else {
           setTimeout(() => {

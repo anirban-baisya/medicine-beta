@@ -82,6 +82,7 @@ const styles = StyleSheet.create({
   categoryTitle: {
     fontSize: 15,
     fontWeight: "500",
+    maxWidth: 170
   },
   categoryDescription: {
     fontSize: 12,

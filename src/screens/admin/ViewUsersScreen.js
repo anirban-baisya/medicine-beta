@@ -1,25 +1,24 @@
+import { AntDesign, Ionicons } from "@expo/vector-icons";
+import React, { useEffect, useState } from "react";
 import {
+  RefreshControl,
+  ScrollView,
+  StatusBar,
   StyleSheet,
   Text,
-  StatusBar,
-  View,
-  ScrollView,
   TouchableOpacity,
-  RefreshControl,
+  View,
 } from "react-native";
-import React, { useState, useEffect } from "react";
-import { colors, network } from "../../constants";
-import { Ionicons } from "@expo/vector-icons";
-import { AntDesign } from "@expo/vector-icons";
+import ProgressDialog from "react-native-progress-dialog";
 import CustomAlert from "../../components/CustomAlert/CustomAlert";
 import CustomInput from "../../components/CustomInput/";
-import ProgressDialog from "react-native-progress-dialog";
 import UserList from "../../components/UserList/UserList";
+import { colors } from "../../constants";
+import { getAllUsersApi } from "../../services/Admin_Api/Users/getAllUsersApi";
 
 const ViewUsersScreen = ({ navigation, route }) => {
   const [name, setName] = useState("");
   const { authUser } = route.params;
-  const [user, setUser] = useState({});
   const [isloading, setIsloading] = useState(false);
   const [refeshing, setRefreshing] = useState(false);
   const [alertType, setAlertType] = useState("error");
@@ -29,40 +28,18 @@ const ViewUsersScreen = ({ navigation, route }) => {
   const [foundItems, setFoundItems] = useState([]);
   const [filterItem, setFilterItem] = useState("");
 
-  //method to convert the authUser to json object
-  const getToken = (obj) => {
-    try {
-      setUser(JSON.parse(obj));
-    } catch (e) {
-      setUser(obj);
-      return obj.token;
-    }
-    return JSON.parse(obj).token;
-  };
 
   //method the fetch the users from server using API call
   const fetchUsers = () => {
-    var myHeaders = new Headers();
-    myHeaders.append("x-auth-token", getToken(authUser));
-
-    var requestOptions = {
-      method: "GET",
-      headers: myHeaders,
-      redirect: "follow",
-    };
     setIsloading(true);
-    fetch(`${network.serverip}/admin/users`, requestOptions)
-      .then((response) => response.json())
-      .then((result) => {
-        if (result.success) {
-          setUsers(result.data);
-          setFoundItems(result.data);
-          setError("");
-        } else {
-          setError(result.message);
-        }
-        setIsloading(false);
-      })
+
+    getAllUsersApi().then((result) => {
+
+      setUsers(result);
+      setFoundItems(result);
+      setError("");
+      setIsloading(false);
+    })
       .catch((error) => {
         setIsloading(false);
         setError(error.message);
@@ -153,6 +130,9 @@ const ViewUsersScreen = ({ navigation, route }) => {
               username={item?.name}
               email={item?.email}
               usertype={item?.userType}
+              userId={item?.userId}
+              phoneNumber={item?.phoneNumber}
+              isActive={item.isActive}
             />
           ))
         )}

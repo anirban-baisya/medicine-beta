@@ -1,26 +1,29 @@
+import { Ionicons } from "@expo/vector-icons";
+import React, { useEffect, useState } from "react";
 import {
+  ScrollView,
+  StatusBar,
   StyleSheet,
   Text,
-  StatusBar,
-  View,
-  ScrollView,
   TouchableOpacity,
+  View,
 } from "react-native";
-import React, { useState, useEffect } from "react";
-import { colors, network } from "../../constants";
-import { Ionicons } from "@expo/vector-icons";
-import CustomAlert from "../../components/CustomAlert/CustomAlert";
+import DropDownPicker from "react-native-dropdown-picker";
 import ProgressDialog from "react-native-progress-dialog";
 import BasicProductList from "../../components/BasicProductList/BasicProductList";
+import CustomAlert from "../../components/CustomAlert/CustomAlert";
 import CustomButton from "../../components/CustomButton";
-import DropDownPicker from "react-native-dropdown-picker";
+import { colors } from "../../constants";
+import { getOrderDetailsByoIdApi } from "../../services/Admin_Api/Order/getOrderDetailsByOIdApi";
+import { updateOrderStatusByIdApi } from "../../services/Admin_Api/Order/updateOrderStatusByIdApi";
 
 const ViewOrderDetailScreen = ({ navigation, route }) => {
-  const { orderDetail, Token } = route.params;
+  const { orderId, fetchOrders } = route.params;
   const [isloading, setIsloading] = useState(false);
   const [label, setLabel] = useState("Loading..");
   const [error, setError] = useState("");
   const [alertType, setAlertType] = useState("error");
+  const [orderDetail, setOrderDetail] = useState({});
   const [totalCost, setTotalCost] = useState(0);
   const [address, setAddress] = useState("");
   const [open, setOpen] = useState(false);
@@ -65,30 +68,24 @@ const ViewOrderDetailScreen = ({ navigation, route }) => {
     setIsloading(true);
     setError("");
     setAlertType("error");
-    var myHeaders = new Headers();
-    myHeaders.append("x-auth-token", Token);
+    
+    data = {
+      orderId: orderId,
+      status: value,
+    }
 
-    var requestOptions = {
-      method: "GET",
-      headers: myHeaders,
-      redirect: "follow",
-    };
-    console.log(
-      `Link:${network.serverip}/admin/order-status?orderId=${id}&status=${value}`
-    );
+    updateOrderStatusByIdApi(data).then((result) => {
 
-    fetch(
-      `${network.serverip}/admin/order-status?orderId=${id}&status=${value}`,
-      requestOptions
-    ) //API call
-      .then((response) => response.json())
-      .then((result) => {
-        if (result.success == true) {
-          setError(`Order status is successfully updated to ${value}`);
-          setAlertType("success");
-          setIsloading(false);
-        }
-      })
+      if (result.success) {
+        setError(`Order status is successfully updated to ${value}`);
+        setAlertType("success");
+        fetchOrders();
+        fetchOrderDetail();
+      } else {
+        setError(result.message);
+      }
+      setIsloading(false);
+    })
       .catch((error) => {
         setAlertType("error");
         setError(error);
@@ -97,29 +94,56 @@ const ViewOrderDetailScreen = ({ navigation, route }) => {
       });
   };
 
-  // calculate the total cost and set the all requried variables on initial render
+
+  const fetchOrderDetail = () => {
+    setIsloading(true);
+
+    getOrderDetailsByoIdApi(orderId).then((result) => {
+
+      if (result.success) {
+        const orderDetail = result.data;
+        setOrderDetail(orderDetail);
+
+        if (orderDetail?.status == "delivered") {
+          setStatusDisable(true);
+        } else {
+          setStatusDisable(false);
+        }
+        setValue(orderDetail?.status);
+        setAddress(
+          orderDetail?.city +
+          ", " +
+          orderDetail?.landMark +
+          ", " +
+          orderDetail?.shippingAddress
+        );
+        setTotalCost(
+          (Math.round(orderDetail?.items?.reduce((accumulator, object) => {
+            return accumulator + object.price * object.qty;
+          }, 0) * 100) / 100).toFixed(2)
+        );
+
+
+        setAlertType("error");
+        setError("");
+      } else {
+        setError(result.message);
+      }
+
+      setIsloading(false);
+
+    }).catch((error) => {
+      setIsloading(false);
+      setError(error.message);
+      console.log("error", error);
+    });
+  };
+
+  //fetch orders on initial render
   useEffect(() => {
-    setError("");
-    setAlertType("error");
-    if (orderDetail?.status == "delivered") {
-      setStatusDisable(true);
-    } else {
-      setStatusDisable(false);
-    }
-    setValue(orderDetail?.status);
-    setAddress(
-      orderDetail?.country +
-        ", " +
-        orderDetail?.city +
-        ", " +
-        orderDetail?.shippingAddress
-    );
-    setTotalCost(
-      orderDetail?.items.reduce((accumulator, object) => {
-        return (accumulator + object.price) * object.quantity;
-      }, 0) // calculate the total cost
-    );
+    fetchOrderDetail();
   }, []);
+
   return (
     <View style={styles.container}>
       <ProgressDialog visible={isloading} label={label} />
@@ -175,16 +199,16 @@ const ViewOrderDetailScreen = ({ navigation, route }) => {
             Order # {orderDetail?.orderId}
           </Text>
           <Text style={styles.secondarytextSm}>
-            Ordered on {dateFormat(orderDetail?.updatedAt)}
+            Ordered on {dateFormat(orderDetail?.orderedOn)}
           </Text>
-          {orderDetail?.shippedOn && (
+          {orderDetail?.status == "shipped" && (
             <Text style={styles.secondarytextSm}>
-              Shipped on {orderDetail?.shippedOn}
+              Shipped on {dateFormat(orderDetail?.shippedOn)}
             </Text>
           )}
-          {orderDetail?.deliveredOn && (
+          {orderDetail?.status == "delivered" && (
             <Text style={styles.secondarytextSm}>
-              Delivered on {orderDetail?.deliveredOn}
+              Delivered on {dateFormat(orderDetail?.deliveredOn)}
             </Text>
           )}
         </View>
@@ -200,26 +224,26 @@ const ViewOrderDetailScreen = ({ navigation, route }) => {
           </View>
           <View style={styles.orderItemContainer}>
             <Text style={styles.orderItemText}>
-              Order on : {dateFormat(orderDetail?.updatedAt)}
+              Order on : {dateFormat(orderDetail?.orderedOn)}
             </Text>
           </View>
           <ScrollView
             style={styles.orderSummaryContainer}
             nestedScrollEnabled={true}
           >
-            {orderDetail?.items.map((product, index) => (
+            {orderDetail?.items?.map((product, index) => (
               <View key={index}>
                 <BasicProductList
-                  title={product?.productId?.title}
+                  title={product?.item?.itemName}
                   price={product?.price}
-                  quantity={product?.quantity}
+                  quantity={product?.qty}
                 />
               </View>
             ))}
           </ScrollView>
           <View style={styles.orderItemContainer}>
             <Text style={styles.orderItemText}>Total</Text>
-            <Text>{totalCost}$</Text>
+            <Text>₹ {totalCost}</Text>
           </View>
         </View>
         <View style={styles.emptyView}></View>

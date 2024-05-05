@@ -41,12 +41,12 @@ const OrderList = ({ item, onPress }) => {
 
   useEffect(() => {
     let packageItems = 0;
-    item?.items.forEach(() => {
+    item?.items?.forEach(() => {
       ++packageItems;
     });
     setQuantity(packageItems);
     setTotalCost(
-      (Math.round( item?.items.reduce((accumulator, object) => {
+      (Math.round( item?.items?.reduce((accumulator, object) => {
         return accumulator + object.price * object.qty;
       }, 0)* 100) / 100).toFixed(2)
     );

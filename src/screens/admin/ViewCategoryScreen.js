@@ -1,35 +1,25 @@
+import { AntDesign, Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import React, { useEffect, useState } from "react";
 import {
+  Alert,
+  RefreshControl,
+  ScrollView,
+  StatusBar,
   StyleSheet,
   Text,
-  StatusBar,
-  View,
-  ScrollView,
   TouchableOpacity,
-  RefreshControl,
-  Alert,
+  View,
 } from "react-native";
-import React, { useState, useEffect } from "react";
-import { colors, network } from "../../constants";
-import { Ionicons } from "@expo/vector-icons";
-import { AntDesign } from "@expo/vector-icons";
-import CustomAlert from "../../components/CustomAlert/CustomAlert";
-import CustomInput from "../../components/CustomInput/";
 import ProgressDialog from "react-native-progress-dialog";
 import CategoryList from "../../components/CategoryList";
+import CustomAlert from "../../components/CustomAlert/CustomAlert";
+import CustomInput from "../../components/CustomInput/";
+import { colors, network } from "../../constants";
+import { getAllCategoriesApi } from "../../services/Categories&Items/getAllCategoriesApi";
 
 const ViewCategoryScreen = ({ navigation, route }) => {
   const { authUser } = route.params;
-  const [user, setUser] = useState({});
-
-  const getToken = (obj) => {
-    try {
-      setUser(JSON.parse(obj));
-    } catch (e) {
-      setUser(obj);
-      return obj.token;
-    }
-    return JSON.parse(obj).token;
-  };
 
   const [isloading, setIsloading] = useState(false);
   const [refeshing, setRefreshing] = useState(false);
@@ -56,14 +46,7 @@ const ViewCategoryScreen = ({ navigation, route }) => {
   };
   //method to delete the specific catgeory
   const handleDelete = (id) => {
-    var myHeaders = new Headers();
-    myHeaders.append("x-auth-token", getToken(authUser));
 
-    var requestOptions = {
-      method: "GET",
-      headers: myHeaders,
-      redirect: "follow",
-    };
     setIsloading(true);
     fetch(`${network.serverip}/delete-category?id=${id}`, requestOptions) // API call
       .then((response) => response.json())
@@ -106,21 +89,14 @@ const ViewCategoryScreen = ({ navigation, route }) => {
 
   //method the fetch the catgeories from server using API call
   const fetchCategories = () => {
-    var myHeaders = new Headers();
-    myHeaders.append("x-auth-token", getToken(authUser));
-
-    var requestOptions = {
-      method: "GET",
-      headers: myHeaders,
-      redirect: "follow",
-    };
     setIsloading(true);
-    fetch(`${network.serverip}/categories`, requestOptions)
-      .then((response) => response.json())
+
+    getAllCategoriesApi()
       .then((result) => {
-        if (result.success) {
-          setCategories(result.categories);
-          setFoundItems(result.categories);
+        if (result) {
+          AsyncStorage.setItem("categoryList", JSON.stringify(result))
+          setCategories(result);
+          setFoundItems(result);
           setError("");
         } else {
           setError(result.message);
@@ -132,6 +108,8 @@ const ViewCategoryScreen = ({ navigation, route }) => {
         setError(error.message);
         console.log("error", error);
       });
+
+
   };
 
   //method to filer the product for by title [search bar]
@@ -208,15 +186,15 @@ const ViewCategoryScreen = ({ navigation, route }) => {
         ) : (
           foundItems.map((item, index) => (
             <CategoryList
-              icon={`${network.serverip}/uploads/${item?.icon}`}
+              icon={item?.image}
               key={index}
               title={item?.title}
-              description={item?.description}
+              description={''}
               onPressEdit={() => {
                 handleEdit(item);
               }}
               onPressDelete={() => {
-                showConfirmDialog(item?._id);
+                showConfirmDialog(item?.categoryId);
               }}
             />
           ))

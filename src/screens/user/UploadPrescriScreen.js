@@ -65,7 +65,7 @@ const UploadPrescriScreen = ({ navigation, route }) => {
     } else {
       //[check validation] -- End
       data = {
-        userId: "1",
+        userId: userInfo.id,
         prescription: 'data:image/jpeg;base64,' + pickedImage?.base64,
         phoneNumber: phoneNo,
         description: description

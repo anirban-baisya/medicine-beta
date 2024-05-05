@@ -1,156 +1,56 @@
+import { AntDesign, Ionicons } from "@expo/vector-icons";
+import * as ImagePicker from "expo-image-picker";
+import React, { useEffect, useState } from "react";
 import {
-  StyleSheet,
-  Text,
   Image,
-  StatusBar,
-  View,
   KeyboardAvoidingView,
   ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
   TouchableOpacity,
+  View,
 } from "react-native";
-import React, { useState } from "react";
-import { colors, network } from "../../constants";
-import CustomInput from "../../components/CustomInput";
-import CustomButton from "../../components/CustomButton";
-import { Ionicons } from "@expo/vector-icons";
-import CustomAlert from "../../components/CustomAlert/CustomAlert";
-import * as ImagePicker from "expo-image-picker";
-import ProgressDialog from "react-native-progress-dialog";
-import { AntDesign } from "@expo/vector-icons";
-import { useEffect } from "react";
 import DropDownPicker from "react-native-dropdown-picker";
+import ProgressDialog from "react-native-progress-dialog";
+import CustomAlert from "../../components/CustomAlert/CustomAlert";
+import CustomButton from "../../components/CustomButton";
+import CustomInput from "../../components/CustomInput";
+import { colors } from "../../constants";
+import { createProductApi } from "../../services/Admin_Api/Product/createProductApi";
 
 const AddProductScreen = ({ navigation, route }) => {
-  const { authUser } = route.params;
+  const { categoryList } = route.params;
   const [isloading, setIsloading] = useState(false);
   const [title, setTitle] = useState("");
   const [price, setPrice] = useState("");
-  const [sku, setSku] = useState("");
-  const [image, setImage] = useState("");
+  const [pickedImage, setPickedImage] = useState({});
   const [error, setError] = useState("");
   const [quantity, setQuantity] = useState("");
   const [description, setDescription] = useState("");
-  const [category, setCategory] = useState("");
+  const [selectedCategoryId, setSelectedCategoryId] = useState("");
   const [alertType, setAlertType] = useState("error");
-  const [user, setUser] = useState({});
   const [categories, setCategories] = useState([]);
   const [open, setOpen] = useState(false);
-  const [value, setValue] = useState(null);
   const [statusDisable, setStatusDisable] = useState(false);
-  const [items, setItems] = useState([
-    { label: "Pending", value: "pending" },
-    { label: "Shipped", value: "shipped" },
-    { label: "Delivered", value: "delivered" },
-  ]);
-  var payload = [];
-
-  //method to convert the authUser to json object.
-  const getToken = (obj) => {
-    try {
-      setUser(JSON.parse(obj));
-    } catch (e) {
-      setUser(obj);
-      return obj.token;
-    }
-    return JSON.parse(obj).token;
-  };
-
-  //Method : Fetch category data from using API call and store for later you in code
-  const fetchCategories = () => {
-    var myHeaders = new Headers();
-    myHeaders.append("x-auth-token", getToken(authUser));
-
-    var requestOptions = {
-      method: "GET",
-      headers: myHeaders,
-      redirect: "follow",
-    };
-    setIsloading(true);
-    fetch(`${network.serverip}/categories`, requestOptions)
-      .then((response) => response.json())
-      .then((result) => {
-        if (result.success) {
-          setCategories(result.categories);
-          result.categories.forEach((cat) => {
-            let obj = {
-              label: cat.title,
-              value: cat._id,
-            };
-            payload.push(obj);
-          });
-          setItems(payload);
-          setError("");
-        } else {
-          setError(result.message);
-        }
-        setIsloading(false);
-      })
-      .catch((error) => {
-        setIsloading(false);
-        setError(error.message);
-        console.log("error", error);
-      });
-  };
-
-  var myHeaders = new Headers();
-  myHeaders.append("x-auth-token", authUser.token);
-  myHeaders.append("Content-Type", "application/json");
-
-  const upload = async () => {
-    console.log("upload-F:", image);
-
-    var formdata = new FormData();
-    formdata.append("photos", image, "product.png");
-
-    var ImageRequestOptions = {
-      method: "POST",
-      body: formdata,
-      redirect: "follow",
-    };
-
-    fetch(
-      "https://api-easybuy.herokuapp.com/photos/upload",
-      ImageRequestOptions
-    )
-      .then((response) => response.json())
-      .then((result) => {
-        console.log(result);
-      })
-      .catch((error) => console.log("error", error));
-  };
-
-  var raw = JSON.stringify({
-    title: title,
-    sku: sku,
-    price: price,
-    image: image,
-    description: description,
-    category: category,
-    quantity: quantity,
-  });
-
-  var requestOptions = {
-    method: "POST",
-    headers: myHeaders,
-    body: raw,
-    redirect: "follow",
-  };
+  
 
   //Method for selecting the image from device gallery
   const pickImage = async () => {
     // No permissions request is necessary for launching the image library
     let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.All,
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: [1, 1],
       quality: 0.5,
+      mediaType: 'photo',
+      base64: true,
     });
 
-    if (!result.cancelled) {
-      console.log(result);
-      setImage(result.uri);
-      upload();
+    if (!result.canceled) {
+      setPickedImage(result?.assets[0]);
     }
+
   };
 
   //Method for imput validation and post data to server to insert product using API call
@@ -167,35 +67,61 @@ const AddProductScreen = ({ navigation, route }) => {
     } else if (quantity <= 0) {
       setError("Quantity must be greater then 1");
       setIsloading(false);
-    } else if (image == null) {
+    } else if (description == "") {
+      setError("Please upload the product description");
+      setIsloading(false);
+    } else if (selectedCategoryId == "") {
+      setError("Please select product category");
+      setIsloading(false);
+    } else if (Object.keys(pickedImage).length == 0) {
       setError("Please upload the product image");
       setIsloading(false);
     } else {
       //[check validation] -- End
-      fetch(network.serverip + "/product", requestOptions)
-        .then((response) => response.json())
-        .then((result) => {
-          console.log(result);
-          if (result.success == true) {
-            setIsloading(false);
-            setAlertType("success");
-            setError(result.message);
-          }
-        })
+      
+      data = {
+        categoryId: selectedCategoryId,
+        itemName: title,
+        salePrice: price,
+        qty: quantity,
+        // image: 'data:image/jpeg;base64,' + pickedImage?.base64,
+        medicalDescription: description
+
+      }
+      createProductApi(data).then((result) => {
+
+        if (result.success == true) {
+          setIsloading(false);
+          setAlertType("success");
+          setError(result.message);
+          
+          setSelectedCategoryId(''), 
+          setTitle(''), 
+          setPrice(''), 
+          setQuantity(''), 
+          setPickedImage({}), 
+          setDescription("")
+
+        }
+      })
         .catch((error) => {
           setIsloading(false);
           setError(error.message);
           setAlertType("error");
           console.log("error", error);
         });
+
     }
   };
 
   //call the fetch functions initial render
   useEffect(() => {
-    fetchCategories();
-    console.log(categories);
-  }, []);
+    const modifiedCategoryItems = categoryList.map((item) => ({
+      label: item.title,
+      value: item.categoryId,
+    }))
+    setCategories(modifiedCategoryItems);
+  }, [categoryList]);
 
   return (
     <KeyboardAvoidingView style={styles.container}>
@@ -204,7 +130,6 @@ const AddProductScreen = ({ navigation, route }) => {
       <View style={styles.TopBarContainer}>
         <TouchableOpacity
           onPress={() => {
-            // navigation.replace("viewproduct", { authUser: authUser });
             navigation.goBack();
           }}
         >
@@ -230,10 +155,10 @@ const AddProductScreen = ({ navigation, route }) => {
       >
         <View style={styles.formContainer}>
           <View style={styles.imageContainer}>
-            {image ? (
+            {Object.keys(pickedImage).length > 0 ? (
               <TouchableOpacity style={styles.imageHolder} onPress={pickImage}>
                 <Image
-                  source={{ uri: image }}
+                  source={{ uri: 'data:image/jpeg;base64,' + pickedImage?.base64 }}
                   style={{ width: 200, height: 200 }}
                 />
               </TouchableOpacity>
@@ -244,13 +169,6 @@ const AddProductScreen = ({ navigation, route }) => {
             )}
           </View>
 
-          <CustomInput
-            value={sku}
-            setValue={setSku}
-            placeholder={"SKU"}
-            placeholderTextColor={colors.muted}
-            radius={5}
-          />
           <CustomInput
             value={title}
             setValue={setTitle}
@@ -274,7 +192,10 @@ const AddProductScreen = ({ navigation, route }) => {
             placeholderTextColor={colors.muted}
             radius={5}
           />
+          
           <CustomInput
+            inputType={'TextArea'}
+            numberOfLines={5}
             value={description}
             setValue={setDescription}
             placeholder={"Description"}
@@ -286,11 +207,10 @@ const AddProductScreen = ({ navigation, route }) => {
       <DropDownPicker
         placeholder={"Select Product Category"}
         open={open}
-        value={category}
-        items={items}
+        value={selectedCategoryId}
+        items={categories}
         setOpen={setOpen}
-        setValue={setCategory}
-        setItems={setItems}
+        setValue={setSelectedCategoryId}
         disabled={statusDisable}
         disabledStyle={{
           backgroundColor: colors.light,

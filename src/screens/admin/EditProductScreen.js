@@ -62,7 +62,6 @@ const EditProductScreen = ({ navigation, route }) => {
       aspect: [1, 1],
       quality: 0.5,
     });
-    console.log(result);
     if (!result.cancelled) {
       setImage(result.uri);
     }

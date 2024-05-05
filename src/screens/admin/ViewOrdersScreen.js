@@ -1,23 +1,22 @@
+import { Ionicons } from "@expo/vector-icons";
+import React, { useEffect, useState } from "react";
 import {
+  RefreshControl,
+  ScrollView,
+  StatusBar,
   StyleSheet,
   Text,
-  StatusBar,
-  View,
-  ScrollView,
   TouchableOpacity,
-  RefreshControl,
+  View,
 } from "react-native";
-import React, { useState, useEffect } from "react";
-import { colors, network } from "../../constants";
-import { Ionicons } from "@expo/vector-icons";
+import ProgressDialog from "react-native-progress-dialog";
 import CustomAlert from "../../components/CustomAlert/CustomAlert";
 import CustomInput from "../../components/CustomInput";
-import ProgressDialog from "react-native-progress-dialog";
-import OrderList from "../../components/OrderList/OrderList";
+import TotalOrderListAdmin from "../../components/TotalOrderListAdmin";
+import { colors } from "../../constants";
+import { getAllOrderListForAdminApi } from "../../services/Admin_Api/Order/getAllOrderListForAdminApi";
 
 const ViewOrdersScreen = ({ navigation, route }) => {
-  const { authUser } = route.params;
-  const [user, setUser] = useState({});
   const [isloading, setIsloading] = useState(false);
   const [refeshing, setRefreshing] = useState(false);
   const [alertType, setAlertType] = useState("error");
@@ -27,16 +26,6 @@ const ViewOrdersScreen = ({ navigation, route }) => {
   const [foundItems, setFoundItems] = useState([]);
   const [filterItem, setFilterItem] = useState("");
 
-  //method to convert the authUser to json object
-  const getToken = (obj) => {
-    try {
-      setUser(JSON.parse(obj));
-    } catch (e) {
-      setUser(obj);
-      return obj.token;
-    }
-    return JSON.parse(obj).token;
-  };
 
   //method call on pull refresh
   const handleOnRefresh = () => {
@@ -46,49 +35,45 @@ const ViewOrdersScreen = ({ navigation, route }) => {
   };
 
   //method to navigate to order detail screen of specific order
-  const handleOrderDetail = (item) => {
+  const handleOrderDetail = (orderId) => {
     navigation.navigate("vieworderdetails", {
-      orderDetail: item,
-      Token: getToken(authUser),
+      orderId,
+      fetchOrders
     });
   };
 
   //method the fetch the order data from server using API call
   const fetchOrders = () => {
-    var myHeaders = new Headers();
-    myHeaders.append("x-auth-token", getToken(authUser));
-
-    var requestOptions = {
-      method: "GET",
-      headers: myHeaders,
-      redirect: "follow",
-    };
+   
     setIsloading(true);
-    fetch(`${network.serverip}/admin/orders`, requestOptions)
-      .then((response) => response.json())
-      .then((result) => {
-        if (result.success) {
-          setOrders(result.data);
-          setFoundItems(result.data);
-          setError("");
-        } else {
-          setError(result.message);
-        }
-        setIsloading(false);
-      })
-      .catch((error) => {
-        setIsloading(false);
-        setError(error.message);
-        console.log("error", error);
-      });
+
+    getAllOrderListForAdminApi().then((result) => {
+      if (result.success) {
+        
+        setOrders(result.data);
+        setFoundItems(result.data);
+        setError("");
+      } else {
+        setError(result.message);
+      }
+      setIsloading(false);
+
+    }).catch((error) => {
+      setIsloading(false);
+      setError(error.message);
+      console.log("error", error);
+    });
+
   };
 
   //method to filer the orders for by title [search bar]
   const filter = () => {
-    const keyword = filterItem;
+    const keyword = filterItem?.toLowerCase();
     if (keyword !== "") {
       const results = orders?.filter((item) => {
-        return item?.orderId.toLowerCase().includes(keyword.toLowerCase());
+        return Object.values(item).some(val =>
+          String(val).toLowerCase().includes(keyword),
+        );
       });
       setFoundItems(results);
     } else {
@@ -147,12 +132,12 @@ const ViewOrdersScreen = ({ navigation, route }) => {
         {foundItems && foundItems.length == 0 ? (
           <Text>{`No order found with the order # ${filterItem}!`}</Text>
         ) : (
-          foundItems.map((order, index) => {
+          foundItems?.map((order, index) => {
             return (
-              <OrderList
+              <TotalOrderListAdmin
                 item={order}
                 key={index}
-                onPress={() => handleOrderDetail(order)}
+                onPress={() => handleOrderDetail(order?.orderId)}
               />
             );
           })

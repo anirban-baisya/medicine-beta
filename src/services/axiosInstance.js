@@ -19,12 +19,10 @@ axiosInstance.interceptors.request.use(
   async (config) => {
     // Do something before request is sent
     const token = await getAsyncStorageTokenInfo(); //for handel the promise
-    // console.log(token)
     config.headers = {
       "Content-Type": "application/json",
       Authorization: "Bearer " + token,
     };
-    // console.log(config)
     return config;
   },
   function (error) {

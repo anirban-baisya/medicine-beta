@@ -1,25 +1,24 @@
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import React, { useEffect, useState } from "react";
 import {
-  StyleSheet,
-  StatusBar,
-  View,
-  TouchableOpacity,
-  Text,
-  ScrollView,
-  FlatList,
   RefreshControl,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from "react-native";
-import React, { useState, useEffect } from "react";
-import { Ionicons } from "@expo/vector-icons";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { colors } from "../../constants";
+import InternetConnectionAlert from "react-native-internet-connection-alert";
+import ProgressDialog from "react-native-progress-dialog";
 import CustomCard from "../../components/CustomCard/CustomCard";
 import OptionList from "../../components/OptionList/OptionList";
-import InternetConnectionAlert from "react-native-internet-connection-alert";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import ProgressDialog from "react-native-progress-dialog";
+import { colors } from "../../constants";
+import { getAdminStatsApi } from "../../services/Admin_Api/Dashboard/getAdminStatsApi";
 
 const DashboardScreen = ({ navigation, route }) => {
-  const { authUser } = route.params;
+  const { authUser, categoryList } = route.params;
   const [user, setUser] = useState(authUser);
   const [label, setLabel] = useState("Loading...");
   const [error, setError] = useState("");
@@ -29,71 +28,57 @@ const DashboardScreen = ({ navigation, route }) => {
 
   //method to remove the auth user from async storage and navigate the login if token expires
   const logout = async () => {
-    await AsyncStorage.removeItem("authUser");
+    // await AsyncStorage.removeItem("authUser");
+    await AsyncStorage.clear();
     navigation.replace("login");
   };
 
-  var myHeaders = new Headers();
-  myHeaders.append("x-auth-token", authUser.token);
-
-  var requestOptions = {
-    method: "GET",
-    headers: myHeaders,
-    redirect: "follow",
-  };
 
   //method the fetch the statistics from server using API call
   const fetchStats = () => {
-    fetch(`${network.serverip}/dashboard`, requestOptions)
-      .then((response) => response.json())
-      .then((result) => {
-        if (result.success == true) {
-          //set the fetched data to Data state
-          setData([
-            {
-              id: 1,
-              title: "Users",
-              value: result.data?.usersCount,
-              iconName: "person",
-              type: "parimary",
-              screenName: "viewusers",
-            },
-            {
-              id: 2,
-              title: "Orders",
-              value: result.data?.ordersCount,
-              iconName: "cart",
-              type: "secondary",
-              screenName: "vieworder",
-            },
-            {
-              id: 3,
-              title: "Products",
-              value: result.data?.productsCount,
-              iconName: "md-square",
-              type: "warning",
-              screenName: "viewproduct",
-            },
-            {
-              id: 4,
-              title: "Categories",
-              value: result.data?.categoriesCount,
-              iconName: "menu",
-              type: "muted",
-              screenName: "viewcategories",
-            },
-          ]);
-          setError("");
-          setIsloading(false);
-        } else {
-          console.log(result.err);
-          if (result.err == "jwt expired") {
-            logout();
-          }
-          setError(result.message);
-          setIsloading(false);
-        }
-      })
+
+    getAdminStatsApi().then((result) => {
+      if (result.success) {
+
+        setData([
+          {
+            id: 1,
+            title: "Users",
+            value: result?.totalUser,
+            iconName: "person",
+            type: "parimary",
+            screenName: "viewusers",
+          },
+          {
+            id: 2,
+            title: "Orders",
+            value: result?.totalOrder,
+            iconName: "cart",
+            type: "secondary",
+            screenName: "vieworder",
+          },
+          {
+            id: 3,
+            title: "Products",
+            value: result?.totalItem,
+            iconName: "md-square",
+            type: "warning",
+            screenName: "viewproduct",
+          },
+          {
+            id: 4,
+            title: "Categories",
+            value: result?.totalCategory,
+            iconName: "menu",
+            type: "muted",
+            screenName: "viewcategories",
+          },
+        ]);
+
+        setError("");
+        setIsloading(false);
+      }
+    })
       .catch((error) => {
         setError(error.message);
         console.log("error", error);
@@ -104,17 +89,19 @@ const DashboardScreen = ({ navigation, route }) => {
   //method call on Pull refresh
   const handleOnRefresh = () => {
     setRefreshing(true);
+    setIsloading(true);
     fetchStats();
     setRefreshing(false);
   };
 
   //call the fetch function initial render
   useEffect(() => {
+    setIsloading(true);
     fetchStats();
   }, []);
 
   return (
-    <InternetConnectionAlert onChange={(connectionState) => {}}>
+    <InternetConnectionAlert onChange={(connectionState) => { }}>
       <View style={styles.container}>
         <StatusBar></StatusBar>
         <ProgressDialog visible={isloading} label={label} />
@@ -182,7 +169,7 @@ const DashboardScreen = ({ navigation, route }) => {
                 navigation.navigate("viewproduct", { authUser: user })
               }
               onPressSecondary={() =>
-                navigation.navigate("addproduct", { authUser: user })
+                navigation.navigate("addproduct", { authUser: user, categoryList })
               }
               type="morden"
             />
@@ -191,7 +178,7 @@ const DashboardScreen = ({ navigation, route }) => {
               Icon={Ionicons}
               iconName={"menu"}
               onPress={() =>
-                navigation.navigate("viewcategories", { authUser: user })
+                navigation.navigate("viewcategories", { authUser: user, categoryList })
               }
               onPressSecondary={() =>
                 navigation.navigate("addcategories", { authUser: user })

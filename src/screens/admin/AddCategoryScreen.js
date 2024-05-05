@@ -1,93 +1,95 @@
+import { AntDesign, Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as ImagePicker from "expo-image-picker";
+import React, { useState } from "react";
 import {
-  StyleSheet,
-  Text,
   Image,
-  StatusBar,
-  View,
   KeyboardAvoidingView,
   ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
   TouchableOpacity,
+  View,
 } from "react-native";
-import React, { useState } from "react";
-import { colors, network } from "../../constants";
-import CustomInput from "../../components/CustomInput";
-import CustomButton from "../../components/CustomButton";
-import { Ionicons } from "@expo/vector-icons";
-import CustomAlert from "../../components/CustomAlert/CustomAlert";
-import * as ImagePicker from "expo-image-picker";
 import ProgressDialog from "react-native-progress-dialog";
-import { AntDesign } from "@expo/vector-icons";
+import CustomAlert from "../../components/CustomAlert/CustomAlert";
+import CustomButton from "../../components/CustomButton";
+import CustomInput from "../../components/CustomInput";
+import { colors } from "../../constants";
+import { createCategoryApi } from "../../services/Admin_Api/Category/createCategoryApi";
+import { getAllCategoriesApi } from "../../services/Categories&Items/getAllCategoriesApi";
 
 const AddCategoryScreen = ({ navigation, route }) => {
-  const { authUser } = route.params; //authUser data
   const [isloading, setIsloading] = useState(false);
   const [title, setTitle] = useState("");
-  const [image, setImage] = useState("easybuycat.png");
-  const [description, setDescription] = useState("");
+  const [pickedImage, setPickedImage] = useState("");
+
   const [error, setError] = useState("");
   const [alertType, setAlertType] = useState("error");
-  const [user, setUser] = useState({});
+  
 
-  //method to convert the authUser to json object.
-  const getToken = (obj) => {
-    try {
-      setUser(JSON.parse(obj));
-    } catch (e) {
-      setUser(obj);
-      return obj.token;
+  const pickImage = async () => {
+    // No permissions request is necessary for launching the image library
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.5,
+      mediaType: 'photo',
+      base64: true,
+    });
+
+    if (!result.canceled) {
+      setPickedImage(result?.assets[0]);
     }
-    return JSON.parse(obj).token;
+
+  };
+
+  const fetchCategoryList = async () => {
+    const result = await getAllCategoriesApi();
+    await AsyncStorage.setItem("categoryList", JSON.stringify(result) );
+
   };
 
   //Method for imput validation post data to server to insert category using API call
   const addCategoryHandle = () => {
-    var myHeaders = new Headers();
-    myHeaders.append("x-auth-token", authUser.token);
-    myHeaders.append("Content-Type", "application/json");
-
-    var raw = JSON.stringify({
-      title: title,
-      image: image,
-      description: description,
-    });
-
-    var requestOptions = {
-      method: "POST",
-      headers: myHeaders,
-      body: raw,
-      redirect: "follow",
-    };
-
     setIsloading(true);
     //[check validation] -- Start
     if (title == "") {
-      setError("Please enter the product title");
+      setError("Please enter the category title");
       setIsloading(false);
-    } else if (description == "") {
-      setError("Please upload the product image");
-      setIsloading(false);
-    } else if (image == null) {
-      setError("Please upload the Catergory image");
+    } else if (Object.keys(pickedImage).length == 0) {
+      setError("Please upload the catergory image");
       setIsloading(false);
     } else {
       //[check validation] -- End
-      fetch(network.serverip + "/category", requestOptions) //API call
-        .then((response) => response.json())
-        .then((result) => {
-          if (result.success == true) {
-            setIsloading(false);
-            setAlertType("success");
-            setError(result.message);
-            setTitle("");
-            setDescription("");
-          }
-        })
+      
+      data = {
+        title: title,
+        // image: 'data:image/jpeg;base64,' + pickedImage?.base64,
+
+      }
+
+      createCategoryApi(data).then((result) => {
+
+        if (result.success == true) {
+          fetchCategoryList()
+          setIsloading(false);
+          setAlertType("success");
+          setError(result.message);
+          setTitle(''), 
+          setPickedImage({})    
+        }
+      })
         .catch((error) => {
           setIsloading(false);
           setError(error.message);
           setAlertType("error");
           console.log("error", error);
         });
+
+
     }
   };
 
@@ -98,7 +100,6 @@ const AddCategoryScreen = ({ navigation, route }) => {
       <View style={styles.TopBarContainer}>
         <TouchableOpacity
           onPress={() => {
-            // navigation.replace("viewproduct", { authUser: authUser });
             navigation.goBack();
           }}
         >
@@ -123,6 +124,23 @@ const AddCategoryScreen = ({ navigation, route }) => {
         style={{ flex: 1, width: "100%" }}
       >
         <View style={styles.formContainer}>
+
+          <View style={styles.imageContainer}>
+           
+            {Object.keys(pickedImage).length > 0 ? (
+              <TouchableOpacity style={styles.imageHolder} onPress={pickImage}>
+                <Image
+                  source={{ uri: 'data:image/jpeg;base64,' + pickedImage?.base64 }}
+                  style={{ width: 200, height: 200 }}
+                />
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity style={styles.imageHolder} onPress={pickImage}>
+                <AntDesign name="pluscircle" size={50} color={colors.muted} />
+              </TouchableOpacity>
+            )}
+          </View>
+
           <CustomInput
             value={title}
             setValue={setTitle}
@@ -131,13 +149,6 @@ const AddCategoryScreen = ({ navigation, route }) => {
             radius={5}
           />
 
-          <CustomInput
-            value={description}
-            setValue={setDescription}
-            placeholder={"Description"}
-            placeholderTextColor={colors.muted}
-            radius={5}
-          />
         </View>
       </ScrollView>
 

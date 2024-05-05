@@ -1,25 +1,25 @@
-import {
-  StyleSheet,
-  StatusBar,
-  View,
-  TouchableOpacity,
-  Text,
-  ScrollView,
-  Modal,
-} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import React, { useState, useEffect } from "react";
-import BasicProductList from "../../components/BasicProductList/BasicProductList";
-import { colors, network } from "../../constants";
-import CustomButton from "../../components/CustomButton";
-import { useSelector, useDispatch } from "react-redux";
-import * as actionCreaters from "../../states/actionCreaters/actionCreaters";
-import { bindActionCreators } from "redux";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import CustomInput from "../../components/CustomInput";
+import React, { useEffect, useState } from "react";
+import {
+  Modal,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import ProgressDialog from "react-native-progress-dialog";
-import { orderCreateApi } from "../../services/Checkout/orderCreateApi";
+import { useDispatch, useSelector } from "react-redux";
+import { bindActionCreators } from "redux";
+import BasicProductList from "../../components/BasicProductList/BasicProductList";
+import CustomButton from "../../components/CustomButton";
+import CustomInput from "../../components/CustomInput";
+import { colors } from "../../constants";
 import { resetMyCart } from "../../redux/slicers/myCartSlicer";
+import { orderCreateApi } from "../../services/Checkout/orderCreateApi";
+import * as actionCreaters from "../../states/actionCreaters/actionCreaters";
 
 const CheckoutScreen = ({ navigation, route }) => {
 
@@ -76,10 +76,8 @@ const CheckoutScreen = ({ navigation, route }) => {
       shippingAddress: streetAddress,
     };
 
-    // console.log("payload---->>", userInfo);
 
     orderCreateApi(data).then((result) => {
-      console.log("Checkout=>", result);
       if (result.success == true) {
         setIsloading(false);
         dispatch(resetMyCart());
@@ -170,7 +168,7 @@ const CheckoutScreen = ({ navigation, route }) => {
           </View>
           <View style={styles.list}>
             <Text style={styles.secondaryTextSm}>Phone</Text>
-            <Text style={styles.secondaryTextSm}>+91 {userInfo?.phoneNo}</Text>
+            <Text style={styles.secondaryTextSm}>+91 {userInfo?.mobile}</Text>
           </View>
         </View>
         <Text style={styles.primaryText}>Address</Text>

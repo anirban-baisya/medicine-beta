@@ -1,24 +1,24 @@
 import {
-  StyleSheet,
   Image,
-  Text,
-  View,
-  StatusBar,
   KeyboardAvoidingView,
   ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 
 import React, { useEffect, useState } from "react";
-import { colors, network } from "../../constants";
 import CustomInput from "../../components/CustomInput";
+import { colors } from "../../constants";
 // import header_logo from "../../../assets/logo/logo.png";
-import header_logo from "../../../assets/logo/logo2.png";
-import CustomButton from "../../components/CustomButton";
-import CustomAlert from "../../components/CustomAlert/CustomAlert";
-import ProgressDialog from "react-native-progress-dialog";
-import InternetConnectionAlert from "react-native-internet-connection-alert";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import InternetConnectionAlert from "react-native-internet-connection-alert";
+import ProgressDialog from "react-native-progress-dialog";
 import { useDispatch, useSelector } from "react-redux";
+import header_logo from "../../../assets/logo/logo2.png";
+import CustomAlert from "../../components/CustomAlert/CustomAlert";
+import CustomButton from "../../components/CustomButton";
 import { onUserLoginSubmit } from "../../redux/slicers/loginSlicer";
 import { getAllCategoriesApi } from "../../services/Categories&Items/getAllCategoriesApi";
 
@@ -105,7 +105,7 @@ const LoginScreen = ({ navigation }) => {
         _storeData('userDetails', loginUserInfo.userDetails);
         _storeData('token', loginUserInfo.token);
         setIsloading(false);
-        navigation.replace("dashboard", { authUser: loginUserInfo.userDetails }); // naviagte to Admin Dashboard
+        navigation.replace("dashboard", { authUser: loginUserInfo.userDetails, categoryList }); // naviagte to Admin Dashboard
       } else {
         _storeData('userDetails', loginUserInfo.userDetails);
         _storeData('token', loginUserInfo.token);
@@ -114,6 +114,7 @@ const LoginScreen = ({ navigation }) => {
       }
     } else if (loginUserInfo != null) {
       setIsloading(false);
+      
       return setError(loginUserInfo?.message);
     }
 
